@@ -28,14 +28,14 @@ const KEYWORDS: [&str; 4] = [
 
 fn is_symbol(ch: char) -> bool {
     match ch {
-        '~' | '!' | '@' | ':' | '|' | '&' | '#' => true,
+        '~' | '!' | '@' | ':' | '|' | '&' | '#' | '^' => true,
         _ => false,
     }
 }
 
 fn is_identifier_start(ch: char) -> bool {
     match ch {
-        'a'..='z' | 'A'..='Z' | '_' | '^' => true,
+        'a'..='z' | 'A'..='Z' | '_' => true,
         _ => false,
     }
 }
