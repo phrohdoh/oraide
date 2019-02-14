@@ -85,6 +85,12 @@ impl<'file> Lexer<'file> {
         self.diagnostics.push(diagnostic);
     }
 
+    /// Take the diagnostics from the lexer, leaving an empty collection
+    #[allow(dead_code)] // used in tests, but not publicly yet
+    fn take_diagnostics(&mut self) -> Vec<Diagnostic<FileSpan>> {
+        std::mem::replace(&mut self.diagnostics, Vec::new())
+    }
+
     /// The next character, if any
     fn peek(&self) -> Option<char> {
         self.peeked
