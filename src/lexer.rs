@@ -142,7 +142,20 @@ impl<'file> Lexer<'file> {
             '~' => TokenKind::Tilde,
             '!' => TokenKind::Bang,
             '@' => TokenKind::At,
-            '^' => TokenKind::Caret,
+            '^' => {
+                match self.peek() {
+                    Some(c) if !is_identifier_start(c) => {
+                        self.add_diagnostic(
+                            Diagnostic::new_error(format!("expected *identifier* found `{}`", c))
+                                .with_label(Label::new_primary(self.token_span()))
+                        );
+
+                        TokenKind::Error
+                    },
+                    // None => { unexpected eof },
+                    _ => TokenKind::Caret,
+                }
+            },
             ':' => TokenKind::Colon,
             _ if is_symbol(ch) => self.consume_symbol(),
             _ if ch.is_whitespace() => self.consume_whitespace(),
