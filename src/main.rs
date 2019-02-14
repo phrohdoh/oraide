@@ -11,7 +11,6 @@ fn main() -> Result<(), Box<dyn Error>> {
     simple_logger::init()?;
 
     let mut files = Files::new();
-    // let file_id = files.add("test", "^BasePlayer:\n\tAlwaysVisible: # some comment\n\t\tDoTheThing: true\n");
     let file_id = files.add("test", unindent(r##"
         ^BasePlayer: # a
         # b
