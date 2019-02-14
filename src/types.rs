@@ -58,7 +58,7 @@ impl fmt::Debug for Token<'_> {
         write!(f, "{kind:?} @ {start}..{end} {slice:?}",
             kind = self.kind,
             start = self.span.start().to_usize(),
-            end = self.span.end().to_usize() - 1,
+            end = self.span.end().to_usize(),
             slice = self.slice,
         )
     }
