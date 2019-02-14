@@ -19,6 +19,27 @@ use crate::types::{
     TokenKind,
 };
 
+const KEYWORDS: [&str; 4] = [
+    "true",
+    "yes",
+    "false",
+    "no",
+];
+
+fn is_symbol(ch: char) -> bool {
+    match ch {
+        '~' | '!' | '@' | ':' | '|' | '&' | '#' => true,
+        _ => false,
+    }
+}
+
+fn is_identifier_start(ch: char) -> bool {
+    match ch {
+        'a'..='z' | 'A'..='Z' | '_' | '^' => true,
+        _ => false,
+    }
+}
+
 /// An iterator over a source string yielding `Token`s for subsequent use by
 /// a `Parser` instance.
 pub struct Lexer<'file> {
@@ -35,6 +56,7 @@ pub struct Lexer<'file> {
     token_start: ByteIndex,
 
     /// End position of the next token to be emitted
+    // I *think* this is actually "end + 1", see https://gitter.im/pikelet-lang/Lobby?at=5c65912a28c89123cbcb0614
     token_end: ByteIndex,
 
     /// Diagnostics accumulated during lexing
@@ -57,6 +79,12 @@ impl<'file> Lexer<'file> {
         }
     }
 
+    /// Record a diagnostic
+    fn add_diagnostic(&mut self, diagnostic: Diagnostic<FileSpan>) {
+        log::debug!("diagnostic added @ {}..{}: {:?}", self.token_span().start().to_usize(), self.token_span().end().to_usize() - 1, diagnostic.message);
+        self.diagnostics.push(diagnostic);
+    }
+
     /// The next character, if any
     fn peek(&self) -> Option<char> {
         self.peeked
@@ -65,13 +93,10 @@ impl<'file> Lexer<'file> {
     /// Consume the current character and load the new one into the internal state, returning the just-consumed character
     fn advance(&mut self) -> Option<char> {
         let cur = std::mem::replace(&mut self.peeked, self.chars.next());
+        // TODO: This causes single-char tokens to have a span of 2 bytes
+        // though this may be intentional (see the non-doc comment on self.token_end).
         self.token_end += cur.map_or(ByteSize::from(0), ByteSize::from_char_len_utf8);
         cur
-    }
-
-    /// Consume a token, returning its tag or `None` if end-of-file has been reached
-    fn consume_token(&mut self) -> Option<TokenKind> {
-        unimplemented!()
     }
 
     fn span(&self, start: ByteIndex, end: ByteIndex) -> FileSpan {
@@ -100,6 +125,71 @@ impl<'file> Lexer<'file> {
             kind,
             slice,
             span,
+        }
+    }
+
+    /// Consume a token, returning its tag or `None` if end-of-file has been reached
+    fn consume_token(&mut self) -> Option<TokenKind> {
+        self.advance().map(|ch| match ch {
+            _ if is_symbol(ch) => self.consume_symbol(),
+            _ if ch.is_whitespace() => self.consume_whitespace(),
+            _ if is_identifier_start(ch) => self.consume_identifier(),
+            _ => {
+                self.add_diagnostic(
+                    Diagnostic::new_error(format!("unexpected character `{}`", ch))
+                        .with_label(Label::new_primary(self.token_span()))
+                );
+
+                TokenKind::Error
+            }
+        })
+    }
+
+    /// Consume a symbol
+    fn consume_symbol(&mut self) -> TokenKind {
+        self.skip_while(is_symbol);
+
+        match self.token_slice() {
+            "~" => TokenKind::Tilde,
+            "!" => TokenKind::Bang,
+            "@" => TokenKind::At,
+            "^" => TokenKind::Caret,
+            ":" => TokenKind::Colon,
+            "&&" => TokenKind::LogicalAnd,
+            "||" => TokenKind::LogicalOr,
+            slice if slice.starts_with("#") => self.consume_comment(),
+            _ => TokenKind::Symbol,
+        }
+    }
+
+    fn consume_comment(&mut self) -> TokenKind {
+        // TODO: What about `\r\n`?
+        self.skip_while(|ch| ch != '\n');
+
+        TokenKind::Comment
+    }
+
+    /// Consume an identifier
+    fn consume_identifier(&mut self) -> TokenKind {
+        self.skip_while(is_identifier_start);
+
+        if KEYWORDS.contains(&self.token_slice()) {
+            TokenKind::Keyword
+        } else {
+            TokenKind::Identifier
+        }
+    }
+
+    /// Consume whitespace
+    fn consume_whitespace(&mut self) -> TokenKind {
+        self.skip_while(char::is_whitespace);
+        TokenKind::Whitespace
+    }
+
+    /// Skip characters while the predicate matches the lookahead character.
+    fn skip_while(&mut self, mut keep_going: impl FnMut(char) -> bool) {
+        while self.peek().map_or(false, |ch| keep_going(ch)) {
+            self.advance();
         }
     }
 }

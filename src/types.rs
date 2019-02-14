@@ -7,6 +7,8 @@ use mltt_span::{
 /// A tag that makes it easier to store what type of token this is
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub enum TokenKind {
+    Error,
+
     Whitespace,
     Comment,
 
@@ -16,10 +18,16 @@ pub enum TokenKind {
     IntLiteral,
     FloatLiteral,
 
+    Tilde,
     Bang,
     At,
     Caret,
     Colon,
+    LogicalOr,
+    LogicalAnd,
+
+    // TODO: Consider an explicit Eol TokenKind
+  //Eol,
 }
 
 /// A token in the source file, to be emitted by a `Lexer` instance
@@ -47,10 +55,10 @@ impl Token<'_> {
 
 impl fmt::Debug for Token<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{kind:?}@[{start}, {end}] {slice:?}",
+        write!(f, "{kind:?} @ {start}..{end} {slice:?}",
             kind = self.kind,
             start = self.span.start().to_usize(),
-            end = self.span.end().to_usize(),
+            end = self.span.end().to_usize() - 1,
             slice = self.slice,
         )
     }
