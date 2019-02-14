@@ -13,9 +13,14 @@ fn main() -> Result<(), Box<dyn Error>> {
     let mut files = Files::new();
     // let file_id = files.add("test", "^BasePlayer:\n\tAlwaysVisible: # some comment\n\t\tDoTheThing: true\n");
     let file_id = files.add("test", unindent(r##"
-        ^BasePlayer:
-            AlwaysVisible: # some comment
-                DoTheThing: true
+        ^BasePlayer: # a
+        # b
+            AlwaysVisible: # c
+            # d
+                # e
+                DoTheThing: true # f
+                    # g
+            # h
     "##));
 
     let lexer = Lexer::new(&files[file_id]);
