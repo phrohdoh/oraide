@@ -218,6 +218,49 @@ impl<'file> Iterator for Lexer<'file> {
 
 #[cfg(test)]
 mod tests {
+    use language_reporting::Severity;
+    use mltt_span::Files;
+    use super::*;
+
+    /// A handy macro to give us a nice syntax for declaring test cases
+    ///
+    /// This was inspired by the tests in the LALRPOP lexer
+    macro_rules! test {
+        ($src:expr, $($span:expr => $token:expr,)*) => {{
+            let _ = simple_logger::init(); // ignore failure
+
+            let mut files = Files::new();
+            let file_id = files.add("test", $src);
+            let lexed_tokens: Vec<_> = Lexer::new(&files[file_id])
+                .map(|result| result)
+                .collect();
+            let expected_tokens = vec![$({
+                let (kind, slice) = $token;
+                let start = ByteIndex::from($span.find("~").unwrap());
+                let end = ByteIndex::from($span.rfind("~").unwrap()) + ByteSize::from(1);
+                let span = FileSpan::new(file_id, start, end);
+                Token { kind, slice, span }
+            }),*];
+
+            assert_eq!(lexed_tokens, expected_tokens);
+        }};
+    }
+
+    #[test]
+    fn data() {
+        test! {
+            "wowza",
+            "~~~~~" => (TokenKind::Identifier, "wowza"),
+        }
+
+        test! {
+            " wowza ",
+            "~      " => (TokenKind::Whitespace, " "),
+            " ~~~~~ " => (TokenKind::Identifier, "wowza"),
+            "      ~" => (TokenKind::Whitespace, " "),
+        }
+    }
+
     #[test]
     fn it_works() {
         assert_eq!(2 + 2, 4);
