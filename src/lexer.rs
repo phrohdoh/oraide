@@ -177,6 +177,7 @@ impl<'file> Lexer<'file> {
         }
     }
 
+    /// Consume everything until we hit a newline sequence
     fn consume_comment(&mut self) -> TokenKind {
         // TODO: What about `\r\n`?
         self.skip_while(|ch| ch != '\n');
