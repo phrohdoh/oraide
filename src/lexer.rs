@@ -328,6 +328,19 @@ mod tests {
     }
 
     #[test]
+    fn newlines() {
+        test! {
+            "\n",
+            "~" => (TokenKind::Whitespace, "\n"),
+        }
+
+        test! {
+            "\r\n",
+            "~~" => (TokenKind::Whitespace, "\r\n"),
+        }
+    }
+
+    #[test]
     fn bang_identifier() {
         test! {
             "!foo-bar",
