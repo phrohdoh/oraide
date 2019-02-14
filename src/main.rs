@@ -28,7 +28,9 @@ fn main() -> Result<(), Box<dyn Error>> {
     let file_id = files.add(file_path, s);
 
     let mut lexer = Lexer::new(&files[file_id]);
-    let _tokens = lexer.by_ref().collect::<Vec<_>>();
+    let tokens = lexer.by_ref().collect::<Vec<_>>();
+    println!("Lexed {} token(s)", tokens.len());
+
     let diags = lexer.take_diagnostics();
 
     if diags.is_empty() {
