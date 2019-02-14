@@ -172,6 +172,12 @@ impl<'file> Lexer<'file> {
             '@' => TokenKind::At,
             '^' => TokenKind::Caret,
             ':' => TokenKind::Colon,
+            '-' if self.peek_satisfies(char::is_whitespace) => {
+                // A `-` followed by whitespace is probably a pseudo
+                // bullet-point string so treat it like a symbol.
+
+                TokenKind::Symbol
+            },
             '-' if self.peek_satisfies(is_identifier_start) => {
                 // An identifier prefixed with a `-` (in MiniYaml this is
                 // removing an inherited property) so just return the `-`
@@ -374,6 +380,16 @@ mod tests {
             "~             " => (TokenKind::Symbol, "-"),
             " ~~~~~~~~~~~~ " => (TokenKind::Identifier, "SomeProperty"),
             "             ~" => (TokenKind::Colon, ":"),
+        }
+    }
+
+    #[test]
+    fn dash_symbol_followed_by_whitespace() {
+        test! {
+            "- Foobar",
+            "~       " => (TokenKind::Symbol, "-"),
+            " ~      " => (TokenKind::Whitespace, " "),
+            "  ~~~~~~" => (TokenKind::Identifier, "Foobar"),
         }
     }
 
