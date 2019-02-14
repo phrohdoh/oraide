@@ -41,6 +41,13 @@ fn is_identifier_start(ch: char) -> bool {
     }
 }
 
+fn is_identifier_continue(ch: char) -> bool {
+    match ch {
+        'a'..='z' | 'A'..='Z' | '_' | '-' => true,
+        _ => false,
+    }
+}
+
 /// An iterator over a source string yielding `Token`s for subsequent use by
 /// a `Parser` instance.
 pub struct Lexer<'file> {
@@ -179,7 +186,7 @@ impl<'file> Lexer<'file> {
 
     /// Consume an identifier
     fn consume_identifier(&mut self) -> TokenKind {
-        self.skip_while(is_identifier_start);
+        self.skip_while(is_identifier_continue);
 
         if KEYWORDS.contains(&self.token_slice()) {
             TokenKind::Keyword
