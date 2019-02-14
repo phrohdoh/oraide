@@ -221,7 +221,22 @@ impl<'file> Iterator for Lexer<'file> {
             .map(|tag| self.emit(tag));
 
         match &opt_token {
-            Some(token) => log::debug!("emit {:?}", token),
+            Some(token) => {
+                log::debug!("emit {:?}", token);
+
+                // The lexer isn't complete until we no longer get Error tokens
+                // with "unexpected character" messages, so panic for now.
+                if let Some(last_diag) = self.diagnostics.last() {
+                    if last_diag.message.contains("unexpected character") {
+                        panic!(
+                            "Got an `Error` token with 'unexpected character' message at {}..{}: {}",
+                            token.span.start().to_usize(),
+                            token.span.end().to_usize(),
+                            token.slice,
+                        );
+                    }
+                }
+            },
             _ => log::debug!("eof"),
         }
 
