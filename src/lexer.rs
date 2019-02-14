@@ -86,8 +86,7 @@ impl<'file> Lexer<'file> {
     }
 
     /// Take the diagnostics from the lexer, leaving an empty collection
-    #[allow(dead_code)] // used in tests, but not publicly yet
-    fn take_diagnostics(&mut self) -> Vec<Diagnostic<FileSpan>> {
+    pub fn take_diagnostics(&mut self) -> Vec<Diagnostic<FileSpan>> {
         std::mem::replace(&mut self.diagnostics, Vec::new())
     }
 
