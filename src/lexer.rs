@@ -19,6 +19,7 @@ use crate::types::{
     TokenKind,
 };
 
+// TODO: Add `TokenKind`s for each of these
 const KEYWORDS: [&str; 4] = [
     "true",
     "yes",
