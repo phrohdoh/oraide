@@ -159,6 +159,17 @@ impl<'file> Lexer<'file> {
             _ if ch.is_digit(10) => self.consume_decimal_literal(),
             _ if ch.is_whitespace() => self.consume_whitespace(),
             _ if is_identifier_start(ch) => self.consume_identifier(),
+
+            // Erroring with "unexpected character" works for programming languages
+            // but not configuration languages (which is what we're lexing here)
+            // so we need to find a better way to handle all the other chars.
+            //
+            // Probably just dump them into an identifier somehow.
+            //
+            // Example of why this won't work:
+            //
+            // DisguiseTooltip:
+            //     GenericName: $%* test tooltip generic name *%$
             _ => {
                 self.add_diagnostic(
                     Diagnostic::new_error(format!("unexpected character `{}`", ch))
