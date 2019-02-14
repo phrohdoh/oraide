@@ -313,6 +313,15 @@ mod tests {
     }
 
     #[test]
+    fn bang_identifier() {
+        test! {
+            "!foo-bar",
+            "~       " => (TokenKind::Bang, "!"),
+            " ~~~~~~~" => (TokenKind::Identifier, "foo-bar"),
+        }
+    }
+
+    #[test]
     fn idents_symbols_and_comments() {
         test! {
             "a@",
