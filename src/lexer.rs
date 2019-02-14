@@ -141,39 +141,7 @@ impl<'file> Lexer<'file> {
             '~' => TokenKind::Tilde,
             '!' => TokenKind::Bang,
             '@' => TokenKind::At,
-            '^' => {
-                // NOTE: We want to move this code into the, eventual, Parser
-                //       since at that point we'll be operating on a token
-                //       stream which gives us a more accurate view of the
-                //       file contents and better spans.
-                match self.peek() {
-                    Some(c) if !is_identifier_start(c) => {
-                        let is_whitespace = c.is_whitespace();
-                        let span = self.token_span();
-
-                        self.add_diagnostic(
-                            Diagnostic::new_error(format!(
-                                "expected an identifier after `^`, found {}",
-                                if is_whitespace { "whitespace".into() } else { format!("`{}`", c) }
-                            ))
-                            .with_label(Label::new_primary(span))
-                            .with_code("E0001")
-                        );
-
-                        self.add_diagnostic(
-                            Diagnostic::new_help(format!(
-                                "remove this {}",
-                                if is_whitespace { "whitespace" } else { "character" }
-                            ))
-                            .with_label(Label::new_secondary(span))
-                        );
-
-                        TokenKind::Error
-                    },
-                    // None => { unexpected eof },
-                    _ => TokenKind::Caret,
-                }
-            },
+            '^' => TokenKind::Caret,
             ':' => TokenKind::Colon,
             _ if is_symbol(ch) => self.consume_symbol(),
             _ if ch.is_whitespace() => self.consume_whitespace(),
@@ -255,7 +223,6 @@ impl<'file> Iterator for Lexer<'file> {
 
 #[cfg(test)]
 mod tests {
-    use language_reporting::Severity;
     use mltt_span::Files;
     use super::*;
 
@@ -296,43 +263,5 @@ mod tests {
             " ~~~~~ " => (TokenKind::Identifier, "wowza"),
             "      ~" => (TokenKind::Whitespace, " "),
         }
-    }
-
-    #[test]
-    fn non_ident_after_caret_diagnostic() {
-        // Arrange
-        let mut files = Files::new();
-        let src = "^:";
-        let file_id = files.add("test", src);
-        let mut lexer = Lexer::new(&files[file_id]);
-
-        let span_caret = FileSpan::new(file_id, ByteIndex::from(0), ByteIndex::from(1));
-
-        // Act
-        let tokens = lexer.by_ref().collect::<Vec<_>>();
-
-        // Assert
-        assert_eq!(tokens, vec![
-            Token {
-                // error on this token because we haven't lexed the next token yet so don't have its span
-                kind: TokenKind::Error,
-                slice: "^",
-                span: span_caret,
-            },
-            Token {
-                kind: TokenKind::Colon,
-                slice: ":",
-                span: FileSpan::new(file_id, ByteIndex::from(1), ByteIndex::from(2)),
-            },
-        ]);
-
-        let diags = lexer.take_diagnostics();
-        let diag = diags.first().expect("Lexer should have a diagnostic");
-
-        assert_eq!(diag.severity, Severity::Error);
-        assert_eq!(&diag.message, "expected an identifier after `^`, found `:`");
-
-        let label = diag.labels.first().expect("Diagnostic should have a label");
-        assert_eq!(label.span, span_caret);
     }
 }
