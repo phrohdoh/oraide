@@ -81,7 +81,7 @@ impl<'file> Lexer<'file> {
 
     /// Record a diagnostic
     fn add_diagnostic(&mut self, diagnostic: Diagnostic<FileSpan>) {
-        log::debug!("diagnostic added @ {}..{}: {:?}", self.token_span().start().to_usize(), self.token_span().end().to_usize() - 1, diagnostic.message);
+        log::debug!("diagnostic added @ {}..{}: {:?}", self.token_span().start().to_usize(), self.token_span().end().to_usize(), diagnostic.message);
         self.diagnostics.push(diagnostic);
     }
 
