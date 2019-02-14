@@ -16,6 +16,7 @@ use oraml2::{
 };
 
 fn main() -> Result<(), Box<dyn Error>> {
+    // Change the level to `Debug` to see the log messages.
     simple_logger::init_with_level(log::Level::Error)?;
 
     let file_path = env::args().nth(1).expect("Please provide a file path");
