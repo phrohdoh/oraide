@@ -142,6 +142,10 @@ impl<'file> Lexer<'file> {
             '!' => TokenKind::Bang,
             '@' => TokenKind::At,
             '^' => {
+                // NOTE: We want to move this code into the, eventual, Parser
+                //       since at that point we'll be operating on a token
+                //       stream which gives us a more accurate view of the
+                //       file contents and better spans.
                 match self.peek() {
                     Some(c) if !is_identifier_start(c) => {
                         let is_whitespace = c.is_whitespace();
