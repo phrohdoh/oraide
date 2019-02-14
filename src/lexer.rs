@@ -284,6 +284,28 @@ mod tests {
     }
 
     #[test]
+    fn symbols() {
+        // single-char symbols
+        test! {
+            "~!@:^#",
+            "~     " => (TokenKind::Tilde, "~"),
+            " ~    " => (TokenKind::Bang, "!"),
+            "  ~   " => (TokenKind::At, "@"),
+            "   ~  " => (TokenKind::Colon, ":"),
+            "    ~ " => (TokenKind::Caret, "^"),
+            "     ~" => (TokenKind::Comment, "#"),
+        }
+
+        // composite symbols
+        test! {
+            "|| &&",
+            "~~   " => (TokenKind::LogicalOr, "||"),
+            "  ~  " => (TokenKind::Whitespace, " "),
+            "   ~~" => (TokenKind::LogicalAnd, "&&"),
+        }
+    }
+
+    #[test]
     fn idents_symbols_and_comments() {
         test! {
             "a@",
