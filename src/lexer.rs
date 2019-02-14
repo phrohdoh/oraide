@@ -314,4 +314,43 @@ mod tests {
             "~~" => (TokenKind::LogicalOr, "||"),
         }
     }
+
+    #[test]
+    fn comment() {
+        // basic
+        test! {
+            "# hello, friends",
+            "~~~~~~~~~~~~~~~~" => (TokenKind::Comment, "# hello, friends"),
+        }
+
+        // multiple # symbols only produce a single comment
+        test! {
+            "# hello, # friends",
+            "~~~~~~~~~~~~~~~~~~" => (TokenKind::Comment, "# hello, # friends"),
+        }
+
+        // no preceding whitespace
+        test! {
+            "#hello, friends",
+            "~~~~~~~~~~~~~~~" => (TokenKind::Comment, "#hello, friends"),
+        }
+
+        // multiple spaces between "end" of comment and eol are included in span
+        test! {
+            "# this is a comment    ",
+            "~~~~~~~~~~~~~~~~~~~~~~~" => (TokenKind::Comment, "# this is a comment    "),
+        }
+
+        // spaces in comment are included
+        test! {
+            "# this is a comment with multiple       spaces",
+            "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" => (TokenKind::Comment, "# this is a comment with multiple       spaces"),
+        }
+
+        // comment with large whitespace and multiple # symbols
+        test! {
+            "# this is a comment with multiple     # spaces",
+            "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" => (TokenKind::Comment, "# this is a comment with multiple     # spaces"),
+        }
+    }
 }
