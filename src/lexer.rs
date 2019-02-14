@@ -230,8 +230,16 @@ impl<'file> Iterator for Lexer<'file> {
                 // with "unexpected character" messages, so panic for now.
                 if let Some(last_diag) = self.diagnostics.last() {
                     if last_diag.message.contains("unexpected character") {
+                        // Can't get a line:col pair here because we need a `Files` for that
+                        // but `Lexer` only has a `&File` which implies the
+                        // `Files` instance is created outside of the lexer so
+                        // we don't have access to it.  :(
+                        //
+                        // So give byte indices instead which is not fantastic
+                        // but usable (105go in vim, for example).
                         panic!(
-                            "Got an `Error` token with 'unexpected character' message at {}..{}: {}",
+                            "Got an `Error` token with 'unexpected character' message in {} at {}..{}: {}",
+                            self.file.name(),
                             token.span.start().to_usize(),
                             token.span.end().to_usize(),
                             token.slice,
