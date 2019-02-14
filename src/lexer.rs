@@ -112,6 +112,7 @@ impl<'file> Lexer<'file> {
         cur
     }
 
+    /// Returns a span in the source file
     fn span(&self, start: ByteIndex, end: ByteIndex) -> FileSpan {
         FileSpan::new(self.file.id(), start, end)
     }
