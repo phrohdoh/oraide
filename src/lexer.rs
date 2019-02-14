@@ -131,6 +131,13 @@ impl<'file> Lexer<'file> {
     /// Consume a token, returning its tag or `None` if end-of-file has been reached
     fn consume_token(&mut self) -> Option<TokenKind> {
         self.advance().map(|ch| match ch {
+            // We put non-composite symbols here (instead of in `consume_symbol`)
+            // so they don't get combined.
+            '~' => TokenKind::Tilde,
+            '!' => TokenKind::Bang,
+            '@' => TokenKind::At,
+            '^' => TokenKind::Caret,
+            ':' => TokenKind::Colon,
             _ if is_symbol(ch) => self.consume_symbol(),
             _ if ch.is_whitespace() => self.consume_whitespace(),
             _ if is_identifier_start(ch) => self.consume_identifier(),
@@ -150,11 +157,6 @@ impl<'file> Lexer<'file> {
         self.skip_while(is_symbol);
 
         match self.token_slice() {
-            "~" => TokenKind::Tilde,
-            "!" => TokenKind::Bang,
-            "@" => TokenKind::At,
-            "^" => TokenKind::Caret,
-            ":" => TokenKind::Colon,
             "&&" => TokenKind::LogicalAnd,
             "||" => TokenKind::LogicalOr,
             slice if slice.starts_with("#") => self.consume_comment(),
