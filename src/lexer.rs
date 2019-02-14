@@ -1,5 +1,8 @@
 use std::{
-    str::Chars,
+    str::{
+        FromStr,
+        Chars,
+    },
 };
 
 use language_reporting::{
@@ -153,6 +156,7 @@ impl<'file> Lexer<'file> {
             '^' => TokenKind::Caret,
             ':' => TokenKind::Colon,
             _ if is_symbol(ch) => self.consume_symbol(),
+            _ if ch.is_digit(10) => self.consume_decimal_literal(),
             _ if ch.is_whitespace() => self.consume_whitespace(),
             _ if is_identifier_start(ch) => self.consume_identifier(),
             _ => {
@@ -175,6 +179,53 @@ impl<'file> Lexer<'file> {
             "||" => TokenKind::LogicalOr,
             slice if slice.starts_with("#") => self.consume_comment(),
             _ => TokenKind::Symbol,
+        }
+    }
+
+    /// Consume a decimal (base 10) literal (such as `123.45` or `123`)
+    fn consume_decimal_literal(&mut self) -> TokenKind {
+        // Assume we are lexing the string `123.45`
+
+        // After this we'll have `123`
+        self.skip_while(|ch| ch.is_digit(10));
+
+        if self.peek() == Some('.') {
+            // Now `123.`
+            self.advance();
+
+            // Now `123.45`
+            self.skip_while(|ch| ch.is_digit(10));
+
+            match f64::from_str(self.token_slice()) {
+                Ok(_) => TokenKind::FloatLiteral,
+                Err(e) => {
+                    self.add_diagnostic(
+                        Diagnostic::new_error("unable to parse text as a 64-bit floating point")
+                            .with_code("E0002")
+                            .with_label(Label::new_primary(self.token_span()))
+                    );
+
+                    self.add_diagnostic(Diagnostic::new_note(format!("{}", e)));
+
+                    TokenKind::Error
+                },
+            }
+        } else {
+            // We're already at the end of the literal so just parse it
+            match u64::from_str_radix(self.token_slice(), 10) {
+                Ok(_) => TokenKind::IntLiteral,
+                Err(e) => {
+                    self.add_diagnostic(
+                        Diagnostic::new_error("unable to parse text as an unsigned 64-bit integer")
+                            .with_code("E0003")
+                            .with_label(Label::new_primary(self.token_span()))
+                    );
+
+                    self.add_diagnostic(Diagnostic::new_note(format!("{}", e)));
+
+                    TokenKind::Error
+                },
+            }
         }
     }
 
@@ -313,6 +364,30 @@ mod tests {
             "       ~     " => (TokenKind::Caret, "^"),
             "        ~~~~~" => (TokenKind::Identifier, "world"),
         }
+    }
+
+    #[test]
+    fn numbers() {
+        test! {
+            "0",
+            "~" => (TokenKind::IntLiteral, "0"),
+        }
+
+        test! {
+            "1",
+            "~" => (TokenKind::IntLiteral, "1"),
+        }
+
+        test! {
+            "123.45",
+            "~~~~~~" => (TokenKind::FloatLiteral, "123.45"),
+        }
+
+        // TODO: Support `-123` and `-123.45`
+        // test! {
+        //     "-1",
+        //     "~~" => (TokenKind::IntLiteral, "-1"),
+        // }
     }
 
     #[test]
