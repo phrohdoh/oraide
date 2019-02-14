@@ -265,4 +265,53 @@ mod tests {
             "      ~" => (TokenKind::Whitespace, " "),
         }
     }
+
+
+    #[test]
+    fn keyword_true() {
+        test! {
+            "true",
+            "~~~~" => (TokenKind::Keyword, "true"),
+        }
+    }
+
+    #[test]
+    fn keyword_false() {
+        test! {
+            "false",
+            "~~~~~" => (TokenKind::Keyword, "false"),
+        }
+    }
+
+    #[test]
+    fn keyword_no() {
+        test! {
+            "no",
+            "~~" => (TokenKind::Keyword, "no"),
+        }
+    }
+
+    #[test]
+    fn keyword_yes() {
+        test! {
+            "yes",
+            "~~~" => (TokenKind::Keyword, "yes"),
+        }
+    }
+
+    #[test]
+    fn op_and() {
+        test! {
+            "&&",
+            "~~" => (TokenKind::LogicalAnd, "&&"),
+        }
+    }
+
+    #[test]
+    fn op_or() {
+        test! {
+            "||",
+            "~~" => (TokenKind::LogicalOr, "||"),
+        }
+    }
 }
