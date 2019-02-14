@@ -283,6 +283,41 @@ mod tests {
         }
     }
 
+    #[test]
+    fn idents_symbols_and_comments() {
+        test! {
+            "a@",
+            "~ " => (TokenKind::Identifier, "a"),
+            " ~" => (TokenKind::At, "@"),
+        }
+
+        test! {
+            "a@b",
+            "~  " => (TokenKind::Identifier, "a"),
+            " ~ " => (TokenKind::At, "@"),
+            "  ~" => (TokenKind::Identifier, "b"),
+        }
+
+        test! {
+            "a@b:",
+            "~   " => (TokenKind::Identifier, "a"),
+            " ~  " => (TokenKind::At, "@"),
+            "  ~ " => (TokenKind::Identifier, "b"),
+            "   ~" => (TokenKind::Colon, ":"),
+        }
+
+        test! {
+            "a@b: c # d",
+            "~         " => (TokenKind::Identifier, "a"),
+            " ~        " => (TokenKind::At, "@"),
+            "  ~       " => (TokenKind::Identifier, "b"),
+            "   ~      " => (TokenKind::Colon, ":"),
+            "    ~     " => (TokenKind::Whitespace, " "),
+            "     ~    " => (TokenKind::Identifier, "c"),
+            "      ~   " => (TokenKind::Whitespace, " "),
+            "       ~~~" => (TokenKind::Comment, "# d"),
+        }
+    }
 
     #[test]
     fn keyword_true() {
