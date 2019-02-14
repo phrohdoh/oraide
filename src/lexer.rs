@@ -281,7 +281,40 @@ mod tests {
     }
 
     #[test]
-    fn it_works() {
-        assert_eq!(2 + 2, 4);
+    fn non_ident_after_caret_diagnostic() {
+        // Arrange
+        let mut files = Files::new();
+        let src = "^:";
+        let file_id = files.add("test", src);
+        let mut lexer = Lexer::new(&files[file_id]);
+
+        let span_caret = FileSpan::new(file_id, ByteIndex::from(0), ByteIndex::from(1));
+
+        // Act
+        let tokens = lexer.by_ref().collect::<Vec<_>>();
+
+        // Assert
+        assert_eq!(tokens, vec![
+            Token {
+                // error on this token because we haven't lexed the next token yet so don't have its span
+                kind: TokenKind::Error,
+                slice: "^",
+                span: span_caret,
+            },
+            Token {
+                kind: TokenKind::Colon,
+                slice: ":",
+                span: FileSpan::new(file_id, ByteIndex::from(1), ByteIndex::from(2)),
+            },
+        ]);
+
+        let diags = lexer.take_diagnostics();
+        let diag = diags.first().expect("Lexer should have a diagnostic");
+
+        assert_eq!(diag.severity, Severity::Error);
+        assert_eq!(&diag.message, "expected *identifier* found `:`");
+
+        let label = diag.labels.first().expect("Diagnostic should have a label");
+        assert_eq!(label.span, span_caret);
     }
 }
