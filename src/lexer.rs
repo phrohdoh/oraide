@@ -118,6 +118,11 @@ impl<'file> Lexer<'file> {
         self.peeked
     }
 
+    /// Query whether or not the next character, if any, satisifies `predicate`, returning `false` if there is no next character
+    fn peek_satisfies(&self, predicate: impl FnMut(char) -> bool) -> bool {
+        self.peek().map_or(false, predicate)
+    }
+
     /// Consume the current character and load the new one into the internal state, returning the just-consumed character
     fn advance(&mut self) -> Option<char> {
         let cur = std::mem::replace(&mut self.peeked, self.chars.next());
@@ -167,6 +172,17 @@ impl<'file> Lexer<'file> {
             '@' => TokenKind::At,
             '^' => TokenKind::Caret,
             ':' => TokenKind::Colon,
+            '-' if self.peek_satisfies(is_identifier_start) => {
+                // An identifier prefixed with a `-` (in MiniYaml this is
+                // removing an inherited property) so just return the `-`
+                // and let the next iteration get the identifier.
+
+                // TODO: Consider a `Dash` variant.
+                //       Need to think about the refactorings, etc., that
+                //       an explicit Dash variant gives us (vs Symbol)
+
+                TokenKind::Symbol
+            },
             _ if is_symbol(ch) => self.consume_symbol(),
             _ if is_dec_digit_start(ch) => self.consume_decimal_literal(),
             _ if ch.is_whitespace() => self.consume_whitespace(),
@@ -348,6 +364,16 @@ mod tests {
             "      ~      " => (TokenKind::Whitespace, " "),
             "       ~     " => (TokenKind::Caret, "^"),
             "        ~~~~~" => (TokenKind::Identifier, "world"),
+        }
+    }
+
+    #[test]
+    fn remove_inherited_property() {
+        test! {
+            "-SomeProperty:",
+            "~             " => (TokenKind::Symbol, "-"),
+            " ~~~~~~~~~~~~ " => (TokenKind::Identifier, "SomeProperty"),
+            "             ~" => (TokenKind::Colon, ":"),
         }
     }
 
