@@ -144,9 +144,24 @@ impl<'file> Lexer<'file> {
             '^' => {
                 match self.peek() {
                     Some(c) if !is_identifier_start(c) => {
+                        let is_whitespace = c.is_whitespace();
+                        let span = self.token_span();
+
                         self.add_diagnostic(
-                            Diagnostic::new_error(format!("expected *identifier* found `{}`", c))
-                                .with_label(Label::new_primary(self.token_span()))
+                            Diagnostic::new_error(format!(
+                                "expected an identifier after `^`, found {}",
+                                if is_whitespace { "whitespace".into() } else { format!("`{}`", c) }
+                            ))
+                            .with_label(Label::new_primary(span))
+                            .with_code("E0001")
+                        );
+
+                        self.add_diagnostic(
+                            Diagnostic::new_help(format!(
+                                "remove this {}",
+                                if is_whitespace { "whitespace" } else { "character" }
+                            ))
+                            .with_label(Label::new_secondary(span))
                         );
 
                         TokenKind::Error
@@ -311,7 +326,7 @@ mod tests {
         let diag = diags.first().expect("Lexer should have a diagnostic");
 
         assert_eq!(diag.severity, Severity::Error);
-        assert_eq!(&diag.message, "expected *identifier* found `:`");
+        assert_eq!(&diag.message, "expected an identifier after `^`, found `:`");
 
         let label = diag.labels.first().expect("Diagnostic should have a label");
         assert_eq!(label.span, span_caret);
