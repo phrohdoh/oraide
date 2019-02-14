@@ -264,6 +264,23 @@ mod tests {
             " ~~~~~ " => (TokenKind::Identifier, "wowza"),
             "      ~" => (TokenKind::Whitespace, " "),
         }
+
+        test! {
+            "hello: world",
+            "~~~~~       " => (TokenKind::Identifier, "hello"),
+            "     ~      " => (TokenKind::Colon, ":"),
+            "      ~     " => (TokenKind::Whitespace, " "),
+            "       ~~~~~" => (TokenKind::Identifier, "world"),
+        }
+
+        test! {
+            "hello: ^world",
+            "~~~~~        " => (TokenKind::Identifier, "hello"),
+            "     ~       " => (TokenKind::Colon, ":"),
+            "      ~      " => (TokenKind::Whitespace, " "),
+            "       ~     " => (TokenKind::Caret, "^"),
+            "        ~~~~~" => (TokenKind::Identifier, "world"),
+        }
     }
 
 
