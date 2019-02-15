@@ -122,6 +122,11 @@ impl<'file, Tokens> Iterator for Parser<Tokens>
                 },
                 TokenKind::Caret => {
                     if have_parsed_colon {
+                        // A stand-alone caret in a value is potentially invalid
+                        // (maybe the author forgot to finish typing the parent node name)
+                        // but we can't know for sure.
+                        //
+                        // TODO: Think about how best to handle this, if at all.
                         value_tokens.push(token);
                     } else {
                         if self.peek_kind_ne(TokenKind::Identifier) {
