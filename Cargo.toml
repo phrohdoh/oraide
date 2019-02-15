@@ -1,5 +1,5 @@
 [package]
-name = "oraml2"
+name = "oraml"
 version = "0.1.0"
 authors = ["Taryn Hill <taryn@phrohdoh.com>"]
 edition = "2018"

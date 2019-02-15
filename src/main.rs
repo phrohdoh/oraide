@@ -11,7 +11,7 @@ use language_reporting::{
     },
 };
 
-use oraml2::{
+use oraml::{
     Lexer,
 };
 
