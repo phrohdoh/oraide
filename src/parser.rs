@@ -136,6 +136,7 @@ impl<'file, Tokens> Iterator for Parser<Tokens>
                                 let peeked_kind_str = match p.kind {
                                     TokenKind::Whitespace => "whitespace",
                                     TokenKind::Eol => "newline",
+                                    _ if p.is_symbol() => "symbol",
                                     _ if p.is_keyword(p.slice) => {
                                         // Can't use `add_diagnostic` here because that would be a double-mut borrow
                                         // of `self` due to `peek` taking `&mut self`.

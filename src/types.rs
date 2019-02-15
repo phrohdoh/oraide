@@ -86,6 +86,20 @@ impl Token<'_> {
             || self.kind == TokenKind::Comment
     }
 
+    pub fn is_symbol(&self) -> bool {
+        match self.kind {
+              TokenKind::Symbol
+            | TokenKind::Tilde
+            | TokenKind::Bang
+            | TokenKind::At
+            | TokenKind::Caret
+            | TokenKind::Colon
+            | TokenKind::LogicalOr
+            | TokenKind::LogicalAnd => true,
+            _ => false,
+        }
+    }
+
     pub fn is_keyword(&self, slice: &str) -> bool {
         match self.kind {
             TokenKind::True
