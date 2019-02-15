@@ -297,6 +297,10 @@ impl<'file> Lexer<'file> {
 
     /// Consume whitespace
     fn consume_whitespace(&mut self) -> TokenKind {
+        // TODO: Skip whitespace until a newline seq so we have different
+        //       tokens for newline and indentation levels
+        //       which, potentially, allows for more lint rules
+        //       ex: must indent with spaces
         self.skip_while(char::is_whitespace);
         TokenKind::Whitespace
     }
