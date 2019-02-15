@@ -39,6 +39,32 @@ pub enum TokenKind {
     Eol,
 }
 
+impl fmt::Display for TokenKind {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", match self {
+            TokenKind::Error => "<*error*>",
+            TokenKind::Whitespace => "<whitespace>",
+            TokenKind::Comment => "<comment>",
+            TokenKind::True => "true",
+            TokenKind::Yes => "yes",
+            TokenKind::False => "false",
+            TokenKind::No => "no",
+            TokenKind::Identifier => "<identifier>",
+            TokenKind::IntLiteral => "<integer literal>",
+            TokenKind::FloatLiteral => "<float literal>",
+            TokenKind::Symbol => "<symbol>",
+            TokenKind::Tilde => "~",
+            TokenKind::Bang => "!",
+            TokenKind::At => "@",
+            TokenKind::Caret => "^",
+            TokenKind::Colon => ":",
+            TokenKind::LogicalOr => "||",
+            TokenKind::LogicalAnd => "&&",
+            TokenKind::Eol => "<end-of-line>",
+        })
+    }
+}
+
 /// A token in the source file, to be emitted by a `Lexer` instance
 #[derive(Clone, PartialEq, Eq)]
 pub struct Token<'file> {
