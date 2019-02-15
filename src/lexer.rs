@@ -110,6 +110,11 @@ impl<'file> Lexer<'file> {
         self.peeked
     }
 
+    /// Query whether or not the next character, if any, is equal to `ch`
+    fn peek_eq(&self, ch: char) -> bool {
+        self.peek_satisfies(|c| c == ch)
+    }
+
     /// Query whether or not the next character, if any, satisifies `predicate`, returning `false` if there is no next character
     fn peek_satisfies(&self, predicate: impl FnMut(char) -> bool) -> bool {
         self.peek().map_or(false, predicate)
@@ -180,6 +185,24 @@ impl<'file> Lexer<'file> {
                 //       an explicit Dash variant gives us (vs Symbol)
 
                 TokenKind::Symbol
+            },
+            '\n' => TokenKind::Eol,
+            '\r' if self.peek_eq('\n') => {
+                // Get the `\n` too
+                self.advance();
+
+                TokenKind::Eol
+            },
+            '\r' => {
+                // A `\r` not followed by `\n` is an invalid newline sequence
+                self.add_diagnostic(
+                    // warning, not error, because we can continue lexing
+                    Diagnostic::new_warning("invalid newline sequence")
+                        .with_code("W0004")
+                        .with_label(Label::new_primary(self.token_span()))
+                );
+
+                TokenKind::Error
             },
             _ if is_symbol(ch) => self.consume_symbol(),
             _ if is_dec_digit_start(ch) => self.consume_decimal_literal(),
@@ -253,8 +276,7 @@ impl<'file> Lexer<'file> {
 
     /// Consume everything until we hit a newline sequence
     fn consume_comment(&mut self) -> TokenKind {
-        // TODO: What about `\r\n`?
-        self.skip_while(|ch| ch != '\n');
+        self.skip_while(|ch| ch != '\n' && ch != '\r');
 
         TokenKind::Comment
     }
@@ -310,6 +332,9 @@ impl<'file> Iterator for Lexer<'file> {
 #[cfg(test)]
 mod tests {
     use mltt_span::Files;
+    use language_reporting::{
+        Severity,
+    };
     use super::*;
 
     /// A handy macro to give us a nice syntax for declaring test cases
@@ -442,13 +467,76 @@ mod tests {
     fn newlines() {
         test! {
             "\n",
-            "~" => (TokenKind::Whitespace, "\n"),
+            "~" => (TokenKind::Eol, "\n"),
         }
 
         test! {
             "\r\n",
-            "~~" => (TokenKind::Whitespace, "\r\n"),
+            "~~" => (TokenKind::Eol, "\r\n"),
         }
+
+        test! {
+            "^Foo:\n",
+            "~      " => (TokenKind::Caret, "^"),
+            " ~~~   " => (TokenKind::Identifier, "Foo"),
+            "    ~  " => (TokenKind::Colon, ":"),
+            "     ~ " => (TokenKind::Eol, "\n"),
+        }
+
+        test! {
+            "^Foo:\r\n",
+            "~        " => (TokenKind::Caret, "^"),
+            " ~~~     " => (TokenKind::Identifier, "Foo"),
+            "    ~    " => (TokenKind::Colon, ":"),
+            "     ~~  " => (TokenKind::Eol, "\r\n"),
+        }
+
+        // sequential newlines yield separate tokens
+        test! {
+            "\n\n",
+            "~   " => (TokenKind::Eol, "\n"),
+            " ~  " => (TokenKind::Eol, "\n"),
+        }
+
+        // sequential newlines yield separate tokens
+        test! {
+            "\r\n\r\n",
+            "~~      " => (TokenKind::Eol, "\r\n"),
+            "  ~~    " => (TokenKind::Eol, "\r\n"),
+        }
+    }
+
+    #[test]
+    fn carriage_return_only_yields_error_token_kind() {
+        // invalid newline sequence yields an error token
+        test! {
+            "\r",
+            "~ " => (TokenKind::Error, "\r"),
+        }
+    }
+
+    #[test]
+    fn carriage_return_only_has_warning_diagnostic() {
+        // Arrange
+        let mut files = Files::new();
+        let file_id = files.add("test", "\r");
+
+        // Act
+        let mut lexer = Lexer::new(&files[file_id]);
+        let tokens: Vec<_> = lexer.by_ref().collect();
+
+        // Assert
+        assert_eq!(tokens.len(), 1);
+        let token = &tokens[0];
+        assert_eq!(token.kind, TokenKind::Error);
+
+        let diags = lexer.take_diagnostics();
+        assert_eq!(diags.len(), 1);
+
+        let diag = &diags[0];
+        assert_eq!(diag.severity, Severity::Warning);
+        assert_eq!(diag.code, Some("W0004".into()));
+        assert!(diag.message.contains("invalid newline sequence"));
     }
 
     #[test]

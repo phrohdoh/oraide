@@ -36,8 +36,7 @@ pub enum TokenKind {
     LogicalOr,
     LogicalAnd,
 
-    // TODO: Consider an explicit Eol TokenKind
-  //Eol,
+    Eol,
 }
 
 /// A token in the source file, to be emitted by a `Lexer` instance
@@ -55,7 +54,9 @@ pub struct Token<'file> {
 
 impl Token<'_> {
     pub fn is_whitespace(&self) -> bool {
-        self.kind == TokenKind::Whitespace || self.kind == TokenKind::Comment
+        self.kind == TokenKind::Whitespace
+            || self.kind == TokenKind::Eol
+            || self.kind == TokenKind::Comment
     }
 
     pub fn is_keyword(&self, slice: &str) -> bool {
