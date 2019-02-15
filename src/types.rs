@@ -102,7 +102,7 @@ impl fmt::Debug for Token<'_> {
             kind = self.kind,
             start = self.span.start().to_usize(),
             end = self.span.end().to_usize(),
-            slice = self.slice,
+            slice = &self.slice[..(std::cmp::min(self.slice.len(), 15))],
         )
     }
 }
