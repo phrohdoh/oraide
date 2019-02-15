@@ -22,14 +22,6 @@ use crate::types::{
     TokenKind,
 };
 
-// TODO: Add `TokenKind`s for each of these
-const KEYWORDS: [&str; 4] = [
-    "true",
-    "yes",
-    "false",
-    "no",
-];
-
 fn is_symbol(ch: char) -> bool {
     match ch {
         '~' | '!' | '@' | ':' | '|' | '&' | '#' | '^' => true,
@@ -271,10 +263,13 @@ impl<'file> Lexer<'file> {
     fn consume_identifier(&mut self) -> TokenKind {
         self.skip_while(is_identifier_continue);
 
-        if KEYWORDS.contains(&self.token_slice()) {
-            TokenKind::Keyword
-        } else {
-            TokenKind::Identifier
+        let slice = self.token_slice();
+        match slice {
+            _ if slice.eq_ignore_ascii_case("true") => TokenKind::True,
+            _ if slice.eq_ignore_ascii_case("yes") => TokenKind::Yes,
+            _ if slice.eq_ignore_ascii_case("false") => TokenKind::False,
+            _ if slice.eq_ignore_ascii_case("no") => TokenKind::No,
+            _ => TokenKind::Identifier,
         }
     }
 
@@ -505,7 +500,12 @@ mod tests {
     fn keyword_true() {
         test! {
             "true",
-            "~~~~" => (TokenKind::Keyword, "true"),
+            "~~~~" => (TokenKind::True, "true"),
+        }
+
+        test! {
+            "True",
+            "~~~~" => (TokenKind::True, "True"),
         }
     }
 
@@ -513,7 +513,12 @@ mod tests {
     fn keyword_false() {
         test! {
             "false",
-            "~~~~~" => (TokenKind::Keyword, "false"),
+            "~~~~~" => (TokenKind::False, "false"),
+        }
+
+        test! {
+            "False",
+            "~~~~~" => (TokenKind::False, "False"),
         }
     }
 
@@ -521,7 +526,12 @@ mod tests {
     fn keyword_no() {
         test! {
             "no",
-            "~~" => (TokenKind::Keyword, "no"),
+            "~~" => (TokenKind::No, "no"),
+        }
+
+        test! {
+            "No",
+            "~~" => (TokenKind::No, "No"),
         }
     }
 
@@ -529,7 +539,12 @@ mod tests {
     fn keyword_yes() {
         test! {
             "yes",
-            "~~~" => (TokenKind::Keyword, "yes"),
+            "~~~" => (TokenKind::Yes, "yes"),
+        }
+
+        test! {
+            "Yes",
+            "~~~" => (TokenKind::Yes, "Yes"),
         }
     }
 

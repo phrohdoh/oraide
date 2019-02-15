@@ -9,15 +9,25 @@ use mltt_span::{
 pub enum TokenKind {
     Error,
 
+    // ignorables
     Whitespace,
     Comment,
 
-    Keyword,
-    Symbol,
+    // keywords
+    True,
+    Yes,
+    False,
+    No,
+    // TODO: Consider adding `Inherits`
+ //Inherits,
+
+    // literals / free-form words
     Identifier,
     IntLiteral,
     FloatLiteral,
 
+    // symbols
+    Symbol,
     Tilde,
     Bang,
     At,
@@ -49,7 +59,13 @@ impl Token<'_> {
     }
 
     pub fn is_keyword(&self, slice: &str) -> bool {
-        self.kind == TokenKind::Keyword && self.slice == slice
+        match self.kind {
+            TokenKind::True
+          | TokenKind::Yes
+          | TokenKind::False
+          | TokenKind::No => self.slice == slice,
+          _ => false
+        }
     }
 }
 
