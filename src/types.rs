@@ -1,5 +1,6 @@
 use std::fmt;
 
+use itertools::Itertools;
 use mltt_span::{
     FileSpan,
 };
@@ -104,5 +105,41 @@ impl fmt::Debug for Token<'_> {
             end = self.span.end().to_usize(),
             slice = &self.slice[..(std::cmp::min(self.slice.len(), 15))],
         )
+    }
+}
+
+#[derive(Clone, PartialEq, Eq)]
+pub struct Node<'file> {
+    /// Tokens that make up the *key* portion, if any
+    pub key_tokens: Vec<Token<'file>>,
+
+    /// Tokens that make up the *value* portion, if any
+    pub value_tokens: Vec<Token<'file>>,
+
+    /// The comment token, if any
+    pub comment_token: Option<Token<'file>>,
+}
+
+impl fmt::Debug for Node<'_> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        if !self.key_tokens.is_empty() {
+            write!(f, "key=[{}]", self.key_tokens
+                .iter()
+                .map(|tok| tok.kind)
+                .join(" "))?;
+        }
+
+        if !self.value_tokens.is_empty() {
+            write!(f, " value=[{}]", self.value_tokens
+                .iter()
+                .map(|tok| tok.kind)
+                .join(" "))?;
+        }
+
+        if self.comment_token.is_some() {
+            write!(f, "<comment>")?;
+        }
+
+        Ok(())
     }
 }

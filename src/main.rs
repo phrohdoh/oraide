@@ -13,11 +13,12 @@ use language_reporting::{
 
 use oraml::{
     Lexer,
+    Parser,
 };
 
 fn main() -> Result<(), Box<dyn Error>> {
     // Change the level to `Debug` to see the log messages.
-    simple_logger::init_with_level(log::Level::Error)?;
+    simple_logger::init_with_level(log::Level::Warn)?;
 
     let file_path = env::args().nth(1).expect("Please provide a file path");
     let mut f = std::fs::File::open(&file_path).expect("Failed to open provided file path");
@@ -27,22 +28,45 @@ fn main() -> Result<(), Box<dyn Error>> {
     let mut files = Files::new();
     let file_id = files.add(file_path, s);
 
-    let mut lexer = Lexer::new(&files[file_id]);
+    // === lexer
+
+    let file = &files[file_id];
+    let mut lexer = Lexer::new(file);
     let tokens = lexer.by_ref().collect::<Vec<_>>();
-    println!("Lexed {} token(s)", tokens.len());
+    log::debug!("Lexed {} token(s)", tokens.len());
 
-    let diags = lexer.take_diagnostics();
+    let lexer_diags = lexer.take_diagnostics();
 
-    if diags.is_empty() {
-        println!("Everything is a-ok!");
-    } else {
+    if !lexer_diags.is_empty() {
         let writer = StandardStream::stdout(ColorArg::from_str("auto").unwrap().into());
 
-        for diag in diags {
+        for diag in &lexer_diags {
             language_reporting::emit(
                 &mut writer.lock(),
                 &files,
-                &diag,
+                diag,
+                &language_reporting::DefaultConfig,
+            ).unwrap();
+
+            println!();
+        }
+    }
+
+    // === parser
+
+    let mut parser = Parser::new(tokens.into_iter());
+    let nodes = parser.by_ref().collect::<Vec<_>>();
+    log::debug!("Parsed {} node(s)", nodes.len());
+
+    let parser_diags = parser.take_diagnostics();
+    if !parser_diags.is_empty() {
+        let writer = StandardStream::stdout(ColorArg::from_str("auto").unwrap().into());
+
+        for diag in &parser_diags {
+            language_reporting::emit(
+                &mut writer.lock(),
+                &files,
+                diag,
                 &language_reporting::DefaultConfig,
             ).unwrap();
 
