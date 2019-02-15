@@ -206,7 +206,7 @@ impl<'file> Lexer<'file> {
             },
             _ if is_symbol(ch) => self.consume_symbol(),
             _ if is_dec_digit_start(ch) => self.consume_decimal_literal(),
-            _ if ch.is_whitespace() => self.consume_whitespace(),
+            _ if ch.is_whitespace() => self.consume_whitespace_until_eol(),
             _ if is_identifier_start(ch) => self.consume_identifier(),
 
             // Anything else, we can't realistically handle
@@ -296,12 +296,8 @@ impl<'file> Lexer<'file> {
     }
 
     /// Consume whitespace
-    fn consume_whitespace(&mut self) -> TokenKind {
-        // TODO: Skip whitespace until a newline seq so we have different
-        //       tokens for newline and indentation levels
-        //       which, potentially, allows for more lint rules
-        //       ex: must indent with spaces
-        self.skip_while(char::is_whitespace);
+    fn consume_whitespace_until_eol(&mut self) -> TokenKind {
+        self.skip_while(|ch| ch != '\r' && ch != '\n' && ch.is_whitespace());
         TokenKind::Whitespace
     }
 
@@ -507,6 +503,33 @@ mod tests {
             "\r\n\r\n",
             "~~      " => (TokenKind::Eol, "\r\n"),
             "  ~~    " => (TokenKind::Eol, "\r\n"),
+        }
+    }
+
+    #[test]
+    fn consume_whitespace_until_eol() {
+        test! {
+            "    \t\n\t",
+            "~~~~~     " => (TokenKind::Whitespace, "    \t"),
+            "     ~    " => (TokenKind::Eol, "\n"),
+            "      ~   " => (TokenKind::Whitespace, "\t"),
+        }
+
+        test! {
+            "    \t\r\n\t",
+            "~~~~~      " => (TokenKind::Whitespace, "    \t"),
+            "     ~~    " => (TokenKind::Eol, "\r\n"),
+            "       ~   " => (TokenKind::Whitespace, "\t"),
+        }
+
+        // comments also stop at eol
+        test! {
+            "hello # test  \n   ",
+            "~~~~~ # test  \n   " => (TokenKind::Identifier, "hello"),
+            "     ~             " => (TokenKind::Whitespace, " "),
+            "      ~~~~~~~~\n   " => (TokenKind::Comment, "# test  "),
+            "              ~    " => (TokenKind::Eol, "\n"),
+            "               ~~~ " => (TokenKind::Whitespace, "   "),
         }
     }
 
