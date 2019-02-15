@@ -103,6 +103,9 @@ impl<'file, Tokens> Iterator for Parser<Tokens>
                     if have_parsed_colon {
                         value_tokens.push(token);
                     } else {
+                        // TODO: A colon being the first non-whitespace token
+                        // is invalid (`:` isn't allowed in a key, and there is no key)
+                        // so we need to add a diagnostic and bail on this node, somehow.
                         have_parsed_colon = true;
                     }
                 },
