@@ -103,9 +103,24 @@ impl<'file, Tokens> Iterator for Parser<Tokens>
                     if have_parsed_colon {
                         value_tokens.push(token);
                     } else {
-                        // TODO: A colon being the first non-whitespace token
-                        // is invalid (`:` isn't allowed in a key, and there is no key)
-                        // so we need to add a diagnostic and bail on this node, somehow.
+                        // A colon being the first non-whitespace token is invalid
+                        // because that is a key-less node (only empty or comment-only nodes can be key-less).
+                        if !itertools::any(&key_tokens, |tok| tok.kind != TokenKind::Whitespace) {
+                            let span = token.span.clone();
+
+                            self.add_diagnostic(Diagnostic::new_error("No key found for this node")
+                                .with_code("P:E0002")
+                                .with_label(Label::new_primary(span))
+                            );
+
+                            self.add_diagnostic(Diagnostic::new_note(
+                                "Nodes must be entirely empty, have a key, or have a comment, they can not be value-only"
+                                // TODO: Attach the span of the entire node.
+                                // Could probably use `itertools::multipeek`'s `peek` in a while loop
+                                // to find the Eol token which gives us the entire span.
+                            ));
+                        }
+
                         have_parsed_colon = true;
                     }
                 },
