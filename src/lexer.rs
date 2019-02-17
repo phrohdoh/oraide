@@ -451,6 +451,14 @@ mod tests {
     }
 
     #[test]
+    fn identifier_allows_dashes() {
+        test! {
+            "my-identifier",
+            "~~~~~~~~~~~~~" => (TokenKind::Identifier, "my-identifier"),
+        }
+    }
+
+    #[test]
     fn symbols() {
         // single-char symbols
         test! {
