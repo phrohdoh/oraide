@@ -186,6 +186,29 @@ impl<'file, Tokens> Iterator for Parser<Tokens>
                         // but we can't know for sure.
                         //
                         // TODO: Think about how best to handle this, if at all.
+
+                        match self.tokens.peek() {
+                            // A ^ followed by a non-identifier, in value position, is *potentially* a typo
+                            // TODO: Once we have a "symbol table" of sorts we could remove this diag
+                            //       as we'd do a lookup and, probably, not find an ident like `^!bar`.
+                            Some(peeked_tok) if peeked_tok.kind != TokenKind::Identifier => {
+                                let peeked_span = peeked_tok.span;
+
+                                self.add_diagnostic(
+                                    Diagnostic::new_warning("A caret followed by a non-identifier is potentially a typo")
+                                        .with_code("P:W0001")
+                                        .with_label(Label::new_primary(token.span))
+                                );
+
+                                self.add_diagnostic(
+                                    Diagnostic::new_help("consider removing this")
+                                        .with_label(Label::new_secondary(peeked_span))
+                                );
+                            },
+                            _ => {},
+                        }
+
+                        self.tokens.reset_peek();
                         value_tokens.push(token);
                     } else {
                         match self.tokens.peek() {
