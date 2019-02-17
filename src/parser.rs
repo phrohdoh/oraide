@@ -42,19 +42,6 @@ impl<'file, Tokens> Parser<Tokens>
         }
     }
 
-    /// Query whether the next token's `kind` field is *equal to* `kind`,
-    /// returning `false` if there is no next token
-    #[allow(dead_code)]
-    fn peek_kind_eq(&mut self, kind: TokenKind) -> bool {
-        self.tokens.peek().map_or(false, |tok| tok.kind == kind)
-    }
-
-    /// Query whether the next token's `kind` field is *not equal to* `kind`,
-    /// returning `false` if there is no next token
-    fn peek_kind_ne(&mut self, kind: TokenKind) -> bool {
-        self.tokens.peek().map_or(false, |tok| tok.kind != kind)
-    }
-
     /// Record a diagnostic
     fn add_diagnostic(&mut self, diagnostic: Diagnostic<FileSpan>) {
         self.diagnostics.push(diagnostic);
