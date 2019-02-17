@@ -100,6 +100,10 @@ impl Token<'_> {
         }
     }
 
+    pub fn is_number(&self) -> bool {
+        self.kind == TokenKind::IntLiteral || self.kind == TokenKind::FloatLiteral
+    }
+
     pub fn is_keyword(&self, slice: &str) -> bool {
         match self.kind {
             TokenKind::True

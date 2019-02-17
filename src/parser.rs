@@ -165,9 +165,9 @@ impl<'file, Tokens> Iterator for Parser<Tokens>
                         value_tokens.push(token);
                     } else {
                         match self.tokens.peek() {
-                            Some(tok_peeked) if tok_peeked.kind != TokenKind::Identifier => {
+                            Some(tok_peeked) if tok_peeked.kind != TokenKind::Identifier && !tok_peeked.is_number() => {
                                 let diag_span = tok_peeked.span.clone();
-                                self.add_diagnostic(Diagnostic::new_error("expected an identifier after `@`")
+                                self.add_diagnostic(Diagnostic::new_error("expected an identifier or number after `@`")
                                     .with_code("P:E0003")
                                     .with_label(Label::new_primary(diag_span))
                                 );
