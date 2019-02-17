@@ -144,7 +144,20 @@ impl<'file, Tokens> Iterator for Parser<Tokens>
                     if have_parsed_colon {
                         value_tokens.push(token);
                     } else {
-                        key_tokens.push(token);
+                        self.add_diagnostic(
+                            Diagnostic::new_error("`!` can not be used in a node's key")
+                                .with_code("P:E0004")
+                                .with_label(Label::new_primary(token.span.clone()))
+                        );
+
+                        self.add_diagnostic(
+                            Diagnostic::new_help("remove this `!` symbol")
+                                .with_label(Label::new_secondary(token.span.clone()))
+                        );
+
+                        self.add_diagnostic(
+                            Diagnostic::new_note("`!` can be used in strings or in conditionals to negate a boolean value")
+                        );
                     }
                 },
                 TokenKind::At => {
