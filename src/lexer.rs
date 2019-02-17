@@ -50,6 +50,7 @@ fn is_identifier_start(ch: char) -> bool {
 
 fn is_identifier_continue(ch: char) -> bool {
     match ch {
+        _ if is_dec_digit_continue(ch) => true, // `T01`, for example, is a valid identifier
         'a'..='z' | 'A'..='Z' | '_' | '-' => true,
         _ => false,
     }
@@ -438,6 +439,14 @@ mod tests {
         test! {
             "-123.45",
             "~~~~~~~" => (TokenKind::FloatLiteral, "-123.45"),
+        }
+    }
+
+    #[test]
+    fn identifier_start_then_number_yields_single_identifier_token() {
+        test! {
+            "T01",
+            "~~~" => (TokenKind::Identifier, "T01"),
         }
     }
 
