@@ -171,6 +171,10 @@ impl<'file, Tokens> Iterator for Parser<Tokens>
                                     .with_code("P:E0003")
                                     .with_label(Label::new_primary(diag_span))
                                 );
+
+                                self.add_diagnostic(
+                                    Diagnostic::new_note("valid examples: `MyProperty@hello`, `HelloWorld@3`")
+                                );
                             },
                             _ => {},
                         }
