@@ -151,6 +151,18 @@ impl<'file, Tokens> Iterator for Parser<Tokens>
                     if have_parsed_colon {
                         value_tokens.push(token);
                     } else {
+                        match self.tokens.peek() {
+                            Some(tok_peeked) if tok_peeked.kind != TokenKind::Identifier => {
+                                let diag_span = tok_peeked.span.clone();
+                                self.add_diagnostic(Diagnostic::new_error("expected an identifier after `@`")
+                                    .with_code("P:E0003")
+                                    .with_label(Label::new_primary(diag_span))
+                                );
+                            },
+                            _ => {},
+                        }
+
+                        self.tokens.reset_peek();
                         key_tokens.push(token);
                     }
                 },
