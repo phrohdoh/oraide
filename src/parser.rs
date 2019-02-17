@@ -226,7 +226,7 @@ impl<'file, Tokens> Iterator for Parser<Tokens>
                                         _ if peeked_tok.is_symbol() => "symbol",
                                         _ if peeked_tok.is_keyword(peeked_tok.slice) => {
                                             // Can't use `add_diagnostic` here because that would be a double-mut borrow
-                                            // of `self` due to `peek` taking `&mut self`.
+                                            // of `self` due to `self.tokens.peek` taking `&mut self`.
                                             diags_to_add.push(Diagnostic::<FileSpan>::new_note(
                                                 "keywords have special meaning and can not be used as keys"
                                             ));
