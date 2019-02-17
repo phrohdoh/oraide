@@ -1,4 +1,4 @@
-use std::iter::Peekable;
+use itertools::MultiPeek;
 
 use language_reporting::{
     Diagnostic,
@@ -6,6 +6,7 @@ use language_reporting::{
 };
 
 use mltt_span::{
+    FileId,
     FileSpan,
 };
 
@@ -19,8 +20,11 @@ use crate::{
 
 /// Transform a stream of tokens into a stream of line-based nodes
 pub struct Parser<Tokens: Iterator> {
+    /// A handle to the file we're parsing
+    file_id: FileId,
+
     /// The underlying stream of tokens
-    tokens: Peekable<Tokens>,
+    tokens: MultiPeek<Tokens>,
 
     /// Diagnostics accumulated during parsing
     diagnostics: Vec<Diagnostic<FileSpan>>,
@@ -30,29 +34,25 @@ impl<'file, Tokens> Parser<Tokens>
     where Tokens: Iterator<Item = Token<'file>> + 'file,
 {
     /// Create a new parser from an iterator of `Token`s
-    pub fn new(tokens: Tokens) -> Parser<Tokens> {
+    pub fn new(file_id: FileId, tokens: Tokens) -> Parser<Tokens> {
         Self {
-            tokens: tokens.peekable(),
+            file_id,
+            tokens: itertools::multipeek(tokens),
             diagnostics: vec![],
         }
-    }
-
-    /// The next token, if any
-    fn peek(&mut self) -> Option<&Tokens::Item> {
-        self.tokens.peek()
     }
 
     /// Query whether the next token's `kind` field is *equal to* `kind`,
     /// returning `false` if there is no next token
     #[allow(dead_code)]
     fn peek_kind_eq(&mut self, kind: TokenKind) -> bool {
-        self.peek().map_or(false, |tok| tok.kind == kind)
+        self.tokens.peek().map_or(false, |tok| tok.kind == kind)
     }
 
     /// Query whether the next token's `kind` field is *not equal to* `kind`,
     /// returning `false` if there is no next token
     fn peek_kind_ne(&mut self, kind: TokenKind) -> bool {
-        self.peek().map_or(false, |tok| tok.kind != kind)
+        self.tokens.peek().map_or(false, |tok| tok.kind != kind)
     }
 
     /// Record a diagnostic
@@ -106,19 +106,48 @@ impl<'file, Tokens> Iterator for Parser<Tokens>
                         // A colon being the first non-whitespace token is invalid
                         // because that is a key-less node (only empty or comment-only nodes can be key-less).
                         if !itertools::any(&key_tokens, |tok| tok.kind != TokenKind::Whitespace) {
-                            let span = token.span.clone();
+                            let span_colon = token.span.clone();
 
                             self.add_diagnostic(Diagnostic::new_error("No key found for this node")
                                 .with_code("P:E0002")
-                                .with_label(Label::new_primary(span))
+                                .with_label(Label::new_primary(span_colon))
                             );
 
-                            self.add_diagnostic(Diagnostic::new_note(
-                                "Nodes must be entirely empty, have a key, or have a comment, they can not be value-only"
-                                // TODO: Attach the span of the entire node.
-                                // Could probably use `itertools::multipeek`'s `peek` in a while loop
-                                // to find the Eol token which gives us the entire span.
-                            ));
+                            // Try to end the span *just before* the newline
+                            // so the printed message doesn't include a newline
+                            // which makes it look weird.
+                            let opt_tok_eol = loop {
+                                // Peek until eol which will give us the node end position
+                                match self.tokens.peek() {
+                                    Some(tok) if tok.kind == TokenKind::Eol => {
+                                        break Some(tok);
+                                    },
+                                    None => {
+                                        // eof
+                                        break None;
+                                    },
+                                    _ => {},
+                                }
+                            };
+
+                            // We got to the end of the file
+                            if opt_tok_eol.is_none() {
+                                // TODO: Consider adding an explicit `Eof` variant to `TokenKind`
+                                unimplemented!("node_span_end.is_none() = true, TODO: get eof location");
+                            }
+
+                            let mut diag = Diagnostic::new_note("Nodes must be entirely empty, have a key, or have a comment, they can not be value-only");
+
+                            if let Some(tok_eol) = opt_tok_eol {
+                                let span = FileSpan::new(self.file_id, span_colon.start(), tok_eol.span.start());
+                                diag = diag.with_label(Label::new_secondary(span));
+                            }
+
+                            // This must be done after the last usage of `opt_tok_eol` or
+                            // we end up borrowing `self.tokens` as mutable multiple times.
+                            self.tokens.reset_peek();
+
+                            self.add_diagnostic(diag);
                         }
 
                         have_parsed_colon = true;
@@ -147,48 +176,50 @@ impl<'file, Tokens> Iterator for Parser<Tokens>
                         // TODO: Think about how best to handle this, if at all.
                         value_tokens.push(token);
                     } else {
-                        if self.peek_kind_ne(TokenKind::Identifier) {
-                            let mut diags_to_add = vec![];
+                        match self.tokens.peek() {
+                            Some(peeked_tok) if peeked_tok.kind != TokenKind::Identifier => {
+                                let mut diags_to_add = vec![];
 
-                            let (peeked_kind_str, peeked_span) = {
-                                // This `unwrap` is fine, `peek_kind_ne` would
-                                // return `false` if there is no token to peek
-                                // so we wouldn't even be executing these lines.
-                                let p = self.peek().unwrap();
+                                let (peeked_kind_str, peeked_span) = {
+                                    let peeked_kind_str = match peeked_tok.kind {
+                                        TokenKind::Whitespace => "whitespace",
+                                        TokenKind::Eol => "newline",
+                                        _ if peeked_tok.is_symbol() => "symbol",
+                                        _ if peeked_tok.is_keyword(peeked_tok.slice) => {
+                                            // Can't use `add_diagnostic` here because that would be a double-mut borrow
+                                            // of `self` due to `peek` taking `&mut self`.
+                                            diags_to_add.push(Diagnostic::<FileSpan>::new_note(
+                                                "keywords have special meaning and can not be used as keys"
+                                            ));
 
-                                let peeked_kind_str = match p.kind {
-                                    TokenKind::Whitespace => "whitespace",
-                                    TokenKind::Eol => "newline",
-                                    _ if p.is_symbol() => "symbol",
-                                    _ if p.is_keyword(p.slice) => {
-                                        // Can't use `add_diagnostic` here because that would be a double-mut borrow
-                                        // of `self` due to `peek` taking `&mut self`.
-                                        diags_to_add.push(Diagnostic::<FileSpan>::new_note(
-                                            "keywords have special meaning and can not be used as keys"
-                                        ));
+                                            "keyword"
+                                        },
+                                        _ => "text",
+                                    };
 
-                                        "keyword"
-                                    },
-                                    _ => "text",
+                                    (peeked_kind_str, peeked_tok.span.clone())
                                 };
 
-                                (peeked_kind_str, p.span.clone())
-                            };
+                                self.add_diagnostic(Diagnostic::new_error("expected an identifier after `^`")
+                                    .with_code("P:E0001")
+                                    .with_label(Label::new_primary(token.span.clone()))
+                                );
 
-                            self.add_diagnostic(Diagnostic::new_error("expected an identifier after `^`")
-                                .with_code("P:E0001")
-                                .with_label(Label::new_primary(token.span.clone()))
-                            );
+                                self.add_diagnostic(Diagnostic::new_help(format!(
+                                    "remove this {}",
+                                    peeked_kind_str
+                                )).with_label(Label::new_secondary(peeked_span)));
 
-                            self.add_diagnostic(Diagnostic::new_help(format!(
-                                "remove this {}",
-                                peeked_kind_str
-                            )).with_label(Label::new_secondary(peeked_span)));
+                                for diag in diags_to_add {
+                                    self.add_diagnostic(diag);
+                                }
 
-                            for diag in diags_to_add {
-                                self.add_diagnostic(diag);
-                            }
+                            },
+                            None => { /* span end is eof */ },
+                            _ => {},
                         }
+
+                        self.tokens.reset_peek();
 
                         key_tokens.push(token);
                     }
