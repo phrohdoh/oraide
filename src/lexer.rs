@@ -224,6 +224,19 @@ impl<'file> Lexer<'file> {
             "&&" => TokenKind::LogicalAnd,
             "||" => TokenKind::LogicalOr,
             slice if slice.starts_with("#") => self.consume_comment(),
+
+            // This only happens if `skip_while` doesn't advance
+            // which means we called this function when we shouldn't have,
+            // i.e. when the peeked token wasn't actually a symbol
+            // (as defined by `is_symbol`).
+            slice if slice.is_empty() => {
+                self.add_diagnostic(
+                    Diagnostic::new_bug("Lexer::consume_symbol invoked with invalid Lexer state, expected next charater to be a symbol")
+                        .with_code("L:B0001")
+                );
+
+                TokenKind::Error
+            },
             _ => TokenKind::Symbol,
         }
     }
