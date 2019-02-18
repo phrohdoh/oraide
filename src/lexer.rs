@@ -364,6 +364,35 @@ mod tests {
                 let file_id = files.add("test", src);
                 let _lexed_tokens: Vec<_> = Lexer::new(&files[file_id]).collect();
             }
+
+            #[test]
+            fn consume_symbol_given_digits_should_return_tokenkind_error_variant_and_add_diag_bug(src in "[0-9]+") {
+                let _ = env_logger::try_init(); // ignore failure
+                log::trace!("{:?}", src);
+
+                // Arrange
+                let mut files = Files::new();
+                let file_id = files.add("test", src);
+                let file = &files[file_id];
+                let mut lexer = Lexer::new(&file);
+
+                let expected_token_kind = TokenKind::Error;
+
+                // Act
+                let actual_token_kind = lexer.consume_symbol();
+
+                // Assert
+                assert_eq!(actual_token_kind, expected_token_kind);
+
+                let diags = lexer.take_diagnostics();
+                assert!(!diags.is_empty());
+
+                let diag = &diags[0];
+                assert_eq!(diag.severity, Severity::Bug);
+                assert!(diag.message.contains("consume_symbol"));
+                assert!(diag.message.contains("invalid Lexer state"));
+                assert!(diag.message.contains("expected next charater to be a symbol"));
+            }
         }
     }
 
