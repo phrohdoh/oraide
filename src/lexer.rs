@@ -338,6 +338,22 @@ mod tests {
     };
     use super::*;
 
+    mod props {
+        use super::*;
+        use proptest::prelude::*;
+
+        proptest! {
+            #[test]
+            fn does_not_crash(src in "\\PC*") {
+                let _ = simple_logger::init(); // ignore failure
+
+                let mut files = Files::new();
+                let file_id = files.add("test", src);
+                let _lexed_tokens: Vec<_> = Lexer::new(&files[file_id]).collect();
+            }
+        }
+    }
+
     /// A handy macro to give us a nice syntax for declaring test cases
     ///
     /// This was inspired by the tests in the LALRPOP lexer
