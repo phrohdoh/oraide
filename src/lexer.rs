@@ -345,7 +345,7 @@ mod tests {
         proptest! {
             #[test]
             fn does_not_crash(src in "\\PC*") {
-                let _ = simple_logger::init(); // ignore failure
+                let _ = env_logger::try_init(); // ignore failure
 
                 let mut files = Files::new();
                 let file_id = files.add("test", src);
@@ -359,7 +359,7 @@ mod tests {
     /// This was inspired by the tests in the LALRPOP lexer
     macro_rules! test {
         ($src:expr, $($span:expr => $token:expr,)*) => {{
-            let _ = simple_logger::init(); // ignore failure
+            let _ = env_logger::try_init(); // ignore failure
 
             let mut files = Files::new();
             let file_id = files.add("test", $src);

@@ -17,8 +17,7 @@ use oraml::{
 };
 
 fn main() -> Result<(), Box<dyn Error>> {
-    // Change the level to `Debug` to see the log messages.
-    simple_logger::init_with_level(log::Level::Warn)?;
+    env_logger::init();
 
     let file_path = env::args().nth(1).expect("Please provide a file path");
     let mut f = std::fs::File::open(&file_path).expect("Failed to open provided file path");
