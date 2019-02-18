@@ -231,8 +231,11 @@ impl<'file> Lexer<'file> {
             // (as defined by `is_symbol`).
             slice if slice.is_empty() => {
                 self.add_diagnostic(
-                    Diagnostic::new_bug("Lexer::consume_symbol invoked with invalid Lexer state, expected next charater to be a symbol")
-                        .with_code("L:B0001")
+                    Diagnostic::new_bug(format!(
+                        "{}::{} invoked with invalid Lexer state, expected next charater to be a symbol",
+                        stringify!(Lexer),
+                        stringify!(consume_symbol)
+                    )).with_code("L:B0001")
                 );
 
                 TokenKind::Error
