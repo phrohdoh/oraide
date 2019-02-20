@@ -251,6 +251,20 @@ impl<'file> Lexer<'file> {
         // After this we'll have `123`
         self.skip_while(is_dec_digit_continue);
 
+        if self.token_span().len() == 0.into() {
+            // If this didn't advance then the next characters didn't satisfy
+            // `is_dec_digit_continue` which means we called this function
+            // when we shouldn't have, this is an implementation bug.
+
+            self.add_diagnostic(
+                Diagnostic::new_bug(format!(
+                    "{}::{} invoked with invalid Lexer state, expected next character to be a symbol",
+                    stringify!(Lexer),
+                    stringify!(consume_decimal_literal)
+                )).with_code("L:B0002")
+            );
+        }
+
         if self.peek() == Some('.') {
             // Now `123.`
             self.advance();
