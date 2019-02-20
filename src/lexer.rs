@@ -263,6 +263,8 @@ impl<'file> Lexer<'file> {
                     stringify!(consume_decimal_literal)
                 )).with_code("L:B0002")
             );
+
+            return TokenKind::Error;
         }
 
         if self.peek() == Some('.') {
