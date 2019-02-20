@@ -528,6 +528,32 @@ mod tests {
                 assert_eq!(tok.kind, expected_token_kind);
                 assert_eq!(tok.slice, src);
             }
+
+            #[test]
+            fn consume_decimal_literal_given_float_works(
+                src in "[0-9-][0-9]{1,6}[.][0-9]{1,8}"
+            ) {
+                let _ = env_logger::try_init(); // ignore failure
+                log::trace!("{:?}", src);
+
+                // Arrange
+                let mut files = Files::new();
+                let file_id = files.add("test", src.clone());
+                let file = &files[file_id];
+                let mut lexer = Lexer::new(&file);
+
+                let expected_token_kind = TokenKind::FloatLiteral;
+
+                // Act
+                let tokens = lexer.by_ref().collect::<Vec<_>>();
+
+                // Assert
+                assert_eq!(tokens.len(), 1);
+
+                let tok = &tokens[0];
+                assert_eq!(tok.kind, expected_token_kind);
+                assert_eq!(tok.slice, src);
+            }
         }
     }
 
