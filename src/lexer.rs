@@ -318,6 +318,23 @@ impl<'file> Lexer<'file> {
     fn consume_identifier(&mut self) -> TokenKind {
         self.skip_while(is_identifier_continue);
 
+        if self.token_span().len() == 0.into() {
+            // If this didn't advance then the next characters didn't satisfy
+            // `is_identifier_continue` which means we called this function
+            // when we shouldn't have, this is an implementation bug.
+
+            self.add_diagnostic(
+                Diagnostic::new_bug(format!(
+                    "{}::{} invoked with invalid Lexer state, expected next character(s) to satisfy `{}`",
+                    stringify!(Lexer),
+                    stringify!(consume_identifier),
+                    stringify!(is_identifier_continue),
+                )).with_code("L:B0003")
+            );
+
+            return TokenKind::Error;
+        }
+
         let slice = self.token_slice();
         match slice {
             _ if slice.eq_ignore_ascii_case("true") => TokenKind::True,
