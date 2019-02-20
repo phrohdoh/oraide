@@ -480,6 +480,28 @@ mod tests {
                 // Assert
                 assert_eq!(actual_token_kind, expected_token_kind);
             }
+
+            #[test]
+            fn consume_identifier(
+                src in "[a-zA-Z0-9][a-zA-Z0-9-._]*"
+            ) {
+                let _ = env_logger::try_init(); // ignore failure
+                log::trace!("{:?}", src);
+
+                // Arrange
+                let mut files = Files::new();
+                let file_id = files.add("test", src);
+                let file = &files[file_id];
+                let mut lexer = Lexer::new(&file);
+
+                let expected_token_kind = TokenKind::Identifier;
+
+                // Act
+                let actual_token_kind = lexer.consume_identifier();
+
+                // Assert
+                assert_eq!(actual_token_kind, expected_token_kind);
+            }
         }
     }
 
