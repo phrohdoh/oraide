@@ -439,6 +439,28 @@ mod tests {
                 assert!(diag.message.contains("invalid Lexer state"));
                 assert!(diag.message.contains("expected next charater to be a symbol"));
             }
+
+            #[test]
+            fn consume_decimal_literal_given_letters_should_return_tokenkind_error_and_add_diag_bug(
+                src in "[a-zA-Z]+"
+            ) {
+                let _ = env_logger::try_init(); // ignore failure
+                log::trace!("{:?}", src);
+
+                // Arrange
+                let mut files = Files::new();
+                let file_id = files.add("test", src);
+                let file = &files[file_id];
+                let mut lexer = Lexer::new(&file);
+
+                let expected_token_kind = TokenKind::Error;
+
+                // Act
+                let actual_token_kind = lexer.consume_decimal_literal();
+
+                // Assert
+                assert_eq!(actual_token_kind, expected_token_kind);
+            }
         }
     }
 
