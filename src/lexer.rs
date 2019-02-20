@@ -279,7 +279,7 @@ impl<'file> Lexer<'file> {
                 Err(e) => {
                     self.add_diagnostic(
                         Diagnostic::new_error("unable to parse text as a 64-bit floating point")
-                            .with_code("E0002")
+                            .with_code("L:E0002")
                             .with_label(Label::new_primary(self.token_span()))
                     );
 
@@ -295,7 +295,7 @@ impl<'file> Lexer<'file> {
                 Err(e) => {
                     self.add_diagnostic(
                         Diagnostic::new_error("unable to parse text as a signed 64-bit integer")
-                            .with_code("E0003")
+                            .with_code("L:E0003")
                             .with_label(Label::new_primary(self.token_span()))
                     );
 
