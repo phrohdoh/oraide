@@ -51,7 +51,7 @@ fn is_identifier_start(ch: char) -> bool {
 fn is_identifier_continue(ch: char) -> bool {
     match ch {
         _ if is_dec_digit_continue(ch) => true, // `T01`, for example, is a valid identifier
-        'a'..='z' | 'A'..='Z' | '_' | '-' => true,
+        'a'..='z' | 'A'..='Z' | '_' | '-' | '.' => true,
         _ => false,
     }
 }
