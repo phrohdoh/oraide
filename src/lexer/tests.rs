@@ -511,10 +511,13 @@ mod props {
             let expected_token_kind = TokenKind::Identifier;
 
             // Act
-            let actual_token_kind = lexer.consume_identifier();
+            let tokens = lexer.by_ref().collect::<Vec<_>>();
 
             // Assert
-            assert_eq!(actual_token_kind, expected_token_kind);
+            assert_eq!(tokens.len(), 1, "{:?}", tokens);
+
+            let token = &tokens[0];
+            assert_eq!(token.kind, expected_token_kind);
         }
 
         #[test]
