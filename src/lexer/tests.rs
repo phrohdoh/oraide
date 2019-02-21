@@ -496,7 +496,32 @@ mod props {
         }
 
         #[test]
-        fn consume_identifier(
+        fn consume_identifier_with_leading_digit_trailing_nondigit__(
+            src in "[0-9][a-zA-Z-._]+"
+        ) {
+            let _ = env_logger::try_init(); // ignore failure
+            log::trace!("{:?}", src);
+
+            // Arrange
+            let mut files = Files::new();
+            let file_id = files.add("test", src);
+            let file = &files[file_id];
+            let mut lexer = Lexer::new(&file);
+
+            let expected_token_kind = TokenKind::Identifier;
+
+            // Act
+            let tokens = lexer.by_ref().collect::<Vec<_>>();
+
+            // Assert
+            assert_eq!(tokens.len(), 1, "{:?}", tokens);
+
+            let token = &tokens[0];
+            assert_eq!(token.kind, expected_token_kind);
+        }
+
+        #[test]
+        fn consume_identifier__(
             src in "[a-zA-Z0-9][a-zA-Z0-9-._]*"
         ) {
             let _ = env_logger::try_init(); // ignore failure
