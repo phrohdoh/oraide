@@ -29,6 +29,14 @@ fn is_symbol(ch: char) -> bool {
     }
 }
 
+fn is_digit_or_numeric_symbol(ch: char) -> bool {
+    match ch {
+        '-' | '.' => true,
+        _ if ch.is_digit(10) => true,
+        _ => false,
+    }
+}
+
 fn is_dec_digit_start(ch: char) -> bool {
     match ch {
         '-' => true, // support negative literals
@@ -38,7 +46,7 @@ fn is_dec_digit_start(ch: char) -> bool {
 }
 
 fn is_dec_digit_continue(ch: char) -> bool {
-    ch.is_digit(10)
+    is_digit_or_numeric_symbol(ch)
 }
 
 fn is_identifier_start(ch: char) -> bool {
@@ -206,9 +214,10 @@ impl<'file> Lexer<'file> {
                 TokenKind::Error
             },
             _ if is_symbol(ch) => self.consume_symbol(),
-            _ if is_dec_digit_start(ch) => self.consume_decimal_literal(),
             _ if ch.is_whitespace() => self.consume_whitespace_until_eol(),
-            _ if is_identifier_start(ch) => self.consume_identifier(),
+
+            // Identifiers are basically anything that fails to parse as an integer or float
+            _ if is_dec_digit_start(ch) || is_identifier_start(ch) => self.consume_identifier_or_decimal_literal(),
 
             // Anything else, we can't realistically handle
             // (many human languages, etc.) so lump them into symbol
@@ -244,69 +253,6 @@ impl<'file> Lexer<'file> {
         }
     }
 
-    /// Consume a decimal (base 10) literal (such as `123.45` or `123`)
-    fn consume_decimal_literal(&mut self) -> TokenKind {
-        // Assume we are lexing the string `123.45`
-
-        // After this we'll have `123`
-        self.skip_while(is_dec_digit_continue);
-
-        if self.token_span().len() == 0.into() {
-            // If this didn't advance then the next characters didn't satisfy
-            // `is_dec_digit_continue` which means we called this function
-            // when we shouldn't have, this is an implementation bug.
-
-            self.add_diagnostic(
-                Diagnostic::new_bug(format!(
-                    "{}::{} invoked with invalid Lexer state, expected next character to be a symbol",
-                    stringify!(Lexer),
-                    stringify!(consume_decimal_literal)
-                )).with_code("L:B0002")
-            );
-
-            return TokenKind::Error;
-        }
-
-        if self.peek() == Some('.') {
-            // Now `123.`
-            self.advance();
-
-            // Now `123.45`
-            self.skip_while(is_dec_digit_continue);
-
-            match f64::from_str(self.token_slice()) {
-                Ok(_) => TokenKind::FloatLiteral,
-                Err(e) => {
-                    self.add_diagnostic(
-                        Diagnostic::new_error("unable to parse text as a 64-bit floating point")
-                            .with_code("L:E0002")
-                            .with_label(Label::new_primary(self.token_span()))
-                    );
-
-                    self.add_diagnostic(Diagnostic::new_note(format!("{}", e)));
-
-                    TokenKind::Error
-                },
-            }
-        } else {
-            // We're already at the end of the literal so just parse it
-            match i64::from_str_radix(self.token_slice(), 10) {
-                Ok(_) => TokenKind::IntLiteral,
-                Err(e) => {
-                    self.add_diagnostic(
-                        Diagnostic::new_error("unable to parse text as a signed 64-bit integer")
-                            .with_code("L:E0003")
-                            .with_label(Label::new_primary(self.token_span()))
-                    );
-
-                    self.add_diagnostic(Diagnostic::new_note(format!("{}", e)));
-
-                    TokenKind::Error
-                },
-            }
-        }
-    }
-
     /// Consume everything until we hit a newline sequence
     fn consume_comment(&mut self) -> TokenKind {
         self.skip_while(|ch| ch != '\n' && ch != '\r');
@@ -314,35 +260,67 @@ impl<'file> Lexer<'file> {
         TokenKind::Comment
     }
 
-    /// Consume an identifier
-    fn consume_identifier(&mut self) -> TokenKind {
-        self.skip_while(is_identifier_continue);
+    /// Consume either an identifier or a decimal literal
+    fn consume_identifier_or_decimal_literal(&mut self) -> TokenKind {
+        self.skip_while(|ch| is_identifier_continue(ch) || is_dec_digit_continue(ch));
 
         if self.token_span().len() == 0.into() {
             // If this didn't advance then the next characters didn't satisfy
-            // `is_identifier_continue` which means we called this function
+            // the above predicate which means we called this function
             // when we shouldn't have, this is an implementation bug.
 
             self.add_diagnostic(
                 Diagnostic::new_bug(format!(
-                    "{}::{} invoked with invalid Lexer state, expected next character(s) to satisfy `{}`",
+                    "{}::{} invoked with invalid Lexer state, expected next character(s) to satisfy `{}` or `{}`",
                     stringify!(Lexer),
                     stringify!(consume_identifier),
                     stringify!(is_identifier_continue),
-                )).with_code("L:B0003")
+                    stringify!(is_dec_digit_continue),
+                )).with_code("L:B0004")
             );
 
             return TokenKind::Error;
         }
 
         let slice = self.token_slice();
-        match slice {
-            _ if slice.eq_ignore_ascii_case("true") => TokenKind::True,
-            _ if slice.eq_ignore_ascii_case("yes") => TokenKind::Yes,
-            _ if slice.eq_ignore_ascii_case("false") => TokenKind::False,
-            _ if slice.eq_ignore_ascii_case("no") => TokenKind::No,
-            _ => TokenKind::Identifier,
+
+        // keywords
+        if slice.eq_ignore_ascii_case("true") { return TokenKind::True; }
+        if slice.eq_ignore_ascii_case("false") { return TokenKind::False; }
+        if slice.eq_ignore_ascii_case("yes") { return TokenKind::Yes; }
+        if slice.eq_ignore_ascii_case("no") { return TokenKind::No; }
+
+        // All `-`s is an identifier (really just "text", consider the value portion of a node)
+        if itertools::all(slice.chars(), |ch| ch == '-') {
+            return TokenKind::Identifier;
         }
+
+        // If all the chars we have skipped so far are digits...
+        if itertools::all(slice.chars(), is_digit_or_numeric_symbol) {
+            // we're lexing a number (but it could be an int or a float, we don't know yet)
+
+            if slice.chars().last().map_or(false, |ch| ch.is_digit(10)) {
+                if slice.contains('.') {
+                    return match f64::from_str(slice) {
+                        Ok(_) => TokenKind::FloatLiteral,
+                        Err(_) => {
+                            log::debug!("Failed to parse text as signed 64-bit integer so assuming it is an identifier: {:?}", slice);
+                            TokenKind::Identifier
+                        },
+                    };
+                } else {
+                    return match i64::from_str_radix(slice, 10) {
+                        Ok(_) => TokenKind::IntLiteral,
+                        Err(_) => {
+                            log::debug!("Failed to parse text as signed 64-bit integer so assuming it is an identifier: {:?}", slice);
+                            TokenKind::Identifier
+                        },
+                    };
+                }
+            }
+        }
+
+        TokenKind::Identifier
     }
 
     /// Consume whitespace

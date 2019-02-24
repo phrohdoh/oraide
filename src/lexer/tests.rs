@@ -474,7 +474,7 @@ mod props {
         }
 
         #[test]
-        fn consume_decimal_literal_given_letters_should_return_tokenkind_error_and_add_diag_bug(
+        fn collect_with_letters_only_yields_identifier(
             src in "[a-zA-Z]+"
         ) {
             let _ = env_logger::try_init(); // ignore failure
@@ -484,19 +484,22 @@ mod props {
             let mut files = Files::new();
             let file_id = files.add("test", src);
             let file = &files[file_id];
-            let mut lexer = Lexer::new(&file);
+            let lexer = Lexer::new(&file);
 
-            let expected_token_kind = TokenKind::Error;
+            let expected_token_kind = TokenKind::Identifier;
 
             // Act
-            let actual_token_kind = lexer.consume_decimal_literal();
+            let tokens = lexer.collect::<Vec<_>>();
 
             // Assert
-            assert_eq!(actual_token_kind, expected_token_kind);
+            assert_eq!(tokens.len(), 1);
+            let token = &tokens[0];
+
+            assert_eq!(token.kind, expected_token_kind);
         }
 
         #[test]
-        fn consume_identifier_with_leading_digit_trailing_nondigit__(
+        fn collect_with_leading_digits_trailing_any_valid_identifier_char_yields_identifier(
             src in "[0-9][a-zA-Z-._]+"
         ) {
             let _ = env_logger::try_init(); // ignore failure
@@ -521,8 +524,8 @@ mod props {
         }
 
         #[test]
-        fn consume_identifier__(
-            src in "[a-zA-Z0-9][a-zA-Z0-9-._]*"
+        fn consume_identifier(
+            src in "[a-zA-Z][a-zA-Z0-9-._]*"
         ) {
             let _ = env_logger::try_init(); // ignore failure
             log::trace!("{:?}", src);
