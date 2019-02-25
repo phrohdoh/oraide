@@ -78,7 +78,7 @@ impl<'file, Tokens> Iterator for Parser<Tokens>
                     };
 
                     if !node.indentation_tokens.is_empty() || !node.key_tokens.is_empty() || !node.value_tokens.is_empty() || node.comment_token.is_some() {
-                        log::debug!("emit {:?}", node);
+                        log::debug!("emit {:#?}", node);
                     } else {
                         log::debug!("empty node");
                     }
