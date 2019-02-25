@@ -129,7 +129,7 @@ impl<'file, Tokens> Iterator for Parser<Tokens>
                             // We got to the end of the file
                             if opt_tok_eol.is_none() {
                                 // TODO: Consider adding an explicit `Eof` variant to `TokenKind`
-                                unimplemented!("node_span_end.is_none() = true, TODO: get eof location");
+                                unimplemented!("{}.is_none() -> true, TODO: get eof location", stringify!(opt_tok_eol));
                             }
 
                             let mut diag = Diagnostic::new_note("Nodes must be entirely empty, have a key, or have a comment, they can not be value-only");
