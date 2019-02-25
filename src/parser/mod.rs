@@ -60,9 +60,9 @@ impl<'file, Tokens> Iterator for Parser<Tokens>
 
     // An iteration finishes when a node is fully-formed
     fn next(&mut self) -> Option<Self::Item> {
-        let mut have_parsed_colon = false;
         let mut indentation_tokens = Vec::<Token<'_>>::new();
         let mut key_tokens = Vec::<Token<'_>>::new();
+        let mut key_terminator_token: Option<Token<'_>> = None;
         let mut value_tokens = Vec::<Token<'_>>::new();
         let mut comment_token: Option<Token<'_>> = None;
 
@@ -72,6 +72,7 @@ impl<'file, Tokens> Iterator for Parser<Tokens>
                     let node = Node {
                         indentation_tokens,
                         key_tokens,
+                        key_terminator_token,
                         value_tokens,
                         comment_token
                     };
@@ -88,14 +89,14 @@ impl<'file, Tokens> Iterator for Parser<Tokens>
                 TokenKind::Whitespace => {
                     if key_tokens.is_empty() {
                         indentation_tokens.push(token);
-                    } else if have_parsed_colon {
+                    } else if key_terminator_token.is_some() {
                         value_tokens.push(token);
                     } else {
                         key_tokens.push(token);
                     }
                 },
                 TokenKind::Colon => {
-                    if have_parsed_colon {
+                    if key_terminator_token.is_some() {
                         value_tokens.push(token);
                     } else {
                         // A colon being the first non-whitespace token is invalid
@@ -145,11 +146,11 @@ impl<'file, Tokens> Iterator for Parser<Tokens>
                             self.add_diagnostic(diag);
                         }
 
-                        have_parsed_colon = true;
+                        key_terminator_token = Some(token);
                     }
                 },
                 TokenKind::Bang => {
-                    if have_parsed_colon {
+                    if key_terminator_token.is_some() {
                         value_tokens.push(token);
                     } else {
                         self.add_diagnostic(
@@ -169,7 +170,7 @@ impl<'file, Tokens> Iterator for Parser<Tokens>
                     }
                 },
                 TokenKind::At => {
-                    if have_parsed_colon {
+                    if key_terminator_token.is_some() {
                         value_tokens.push(token);
                     } else {
                         match self.tokens.peek() {
@@ -192,7 +193,7 @@ impl<'file, Tokens> Iterator for Parser<Tokens>
                     }
                 },
                 TokenKind::Caret => {
-                    if have_parsed_colon {
+                    if key_terminator_token.is_some() {
                         // A stand-alone caret in a value is potentially invalid
                         // (maybe the author forgot to finish typing the parent node name)
                         // but we can't know for sure.
@@ -272,7 +273,7 @@ impl<'file, Tokens> Iterator for Parser<Tokens>
                     }
                 },
                 TokenKind::Identifier => {
-                    if have_parsed_colon {
+                    if key_terminator_token.is_some() {
                         value_tokens.push(token);
                     } else {
                         key_tokens.push(token);

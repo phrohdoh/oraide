@@ -134,6 +134,11 @@ pub struct Node<'file> {
     /// Tokens that make up the *key* portion, if any
     pub key_tokens: Vec<Token<'file>>,
 
+    /// The token (should always be a `:`) that separates
+    /// the key from the comment / value / end-of-line
+    // This is expected to only be Some if `key_tokens` is not empty
+    pub key_terminator_token: Option<Token<'file>>,
+
     /// Tokens that make up the *value* portion, if any
     pub value_tokens: Vec<Token<'file>>,
 

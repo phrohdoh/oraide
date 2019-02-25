@@ -61,7 +61,9 @@ fn general_test() {
                 token!(file_id, At, "@", 11..12),
                 token!(file_id, Identifier, "Wookie", 12..18),
             ],
-            // NOTE: The `:` is skipped so span byte indices will not be consecutive
+            key_terminator_token: Some(
+                token!(file_id, Colon, ":", 18..19),
+            ),
             value_tokens: vec![
                 token!(file_id, Whitespace, " ", 19..20),
             ],
@@ -76,7 +78,9 @@ fn general_test() {
             key_tokens: vec![
                 token!(file_id, Identifier, "AlwaysVisible", 28..41),
             ],
-            // NOTE: The `:` is skipped so span byte indices will not be consecutive
+            key_terminator_token: Some(
+                token!(file_id, Colon, ":", 41..42),
+            ),
             value_tokens: vec![
                 token!(file_id, Whitespace, "  ", 42..44),
             ],
@@ -87,6 +91,7 @@ fn general_test() {
         Node {
             indentation_tokens: vec![],
             key_tokens: vec![],
+            key_terminator_token: None,
             value_tokens: vec![],
             comment_token: None,
         },
@@ -95,7 +100,9 @@ fn general_test() {
             key_tokens: vec![
                 token!(file_id, Identifier, "Player", 49..55),
             ],
-            // NOTE: The `:` is skipped so span byte indices will not be consecutive
+            key_terminator_token: Some(
+                token!(file_id, Colon, ":", 55..56),
+            ),
             value_tokens: vec![],
             comment_token: None,
         },
@@ -106,7 +113,9 @@ fn general_test() {
             key_tokens: vec![
                 token!(file_id, Identifier, "Inherits", 61..69),
             ],
-            // NOTE: The `:` is skipped so span byte indices will not be consecutive
+            key_terminator_token: Some(
+                token!(file_id, Colon, ":", 69..70),
+            ),
             value_tokens: vec![
                 token!(file_id, Whitespace, " ", 70..71),
                 token!(file_id, Caret, "^", 71..72),
