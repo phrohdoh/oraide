@@ -272,15 +272,14 @@ impl<'file, Tokens> Iterator for Parser<Tokens>
                         key_tokens.push(token);
                     }
                 },
-                TokenKind::Identifier => {
+                _ => { // I don't yet know if handling the remaining
+                       // variants like this is correct.
                     if key_terminator_token.is_some() {
                         value_tokens.push(token);
                     } else {
                         key_tokens.push(token);
                     }
                 },
-                TokenKind::True => {},
-                _ => unimplemented!("{:?}", token),
             }
         }
 
