@@ -116,12 +116,20 @@ impl Token<'_> {
 
 impl fmt::Debug for Token<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{kind:?} @ {start}..{end} {slice:?}",
+        write!(f, "{kind:?} @ {start}..{end}",
             kind = self.kind,
             start = self.span.start().to_usize(),
             end = self.span.end().to_usize(),
-            slice = self.slice,
-        )
+        )?;
+
+        match self.kind {
+            TokenKind::Identifier | TokenKind::Comment => {
+                write!(f, " {:?}", self.slice)?;
+            },
+            _ => {},
+        }
+
+        Ok(())
     }
 }
 
