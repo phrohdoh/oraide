@@ -1,6 +1,5 @@
 use std::fmt;
 
-use itertools::Itertools;
 use mltt_span::{
     FileSpan,
 };
