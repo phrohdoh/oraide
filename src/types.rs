@@ -128,6 +128,9 @@ impl fmt::Debug for Token<'_> {
 
 #[derive(Clone, PartialEq, Eq)]
 pub struct Node<'file> {
+    /// Tokens that make up the whitespace before any other tokens
+    pub indentation_tokens: Vec<Token<'file>>,
+
     /// Tokens that make up the *key* portion, if any
     pub key_tokens: Vec<Token<'file>>,
 
@@ -140,7 +143,18 @@ pub struct Node<'file> {
 
 impl fmt::Debug for Node<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        if !self.indentation_tokens.is_empty() {
+            write!(f, "indentation=[{}]", self.indentation_tokens
+                .iter()
+                .map(|tok| tok.kind)
+                .join(" "))?;
+        }
+
         if !self.key_tokens.is_empty() {
+            if !self.indentation_tokens.is_empty() {
+                write!(f, " ")?;
+            }
+
             write!(f, "key=[{}]", self.key_tokens
                 .iter()
                 .map(|tok| tok.kind)
@@ -148,13 +162,21 @@ impl fmt::Debug for Node<'_> {
         }
 
         if !self.value_tokens.is_empty() {
-            write!(f, " value=[{}]", self.value_tokens
+            if !self.key_tokens.is_empty() {
+                write!(f, " ")?;
+            }
+
+            write!(f, "value=[{}]", self.value_tokens
                 .iter()
                 .map(|tok| tok.kind)
                 .join(" "))?;
         }
 
         if self.comment_token.is_some() {
+            if !self.value_tokens.is_empty() {
+                write!(f, " ")?;
+            }
+
             write!(f, "<comment>")?;
         }
 
