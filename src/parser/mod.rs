@@ -286,3 +286,6 @@ impl<'file, Tokens> Iterator for Parser<Tokens>
         None
     }
 }
+
+#[cfg(test)]
+mod tests;
