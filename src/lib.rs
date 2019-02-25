@@ -1,5 +1,5 @@
-mod lexer;
 mod types;
+mod lexer;
 mod parser;
 
 pub use types::{
