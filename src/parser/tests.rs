@@ -54,7 +54,7 @@ fn general_test() {
 
     let expected_nodes = vec![
         Node {
-            indentation_tokens: vec![],
+            indentation_token: None,
             key_tokens: vec![
                 token!(file_id, Caret, "^", 0..1),
                 token!(file_id, Identifier, "BasePlayer", 1..11),
@@ -72,9 +72,9 @@ fn general_test() {
             ),
         },
         Node {
-            indentation_tokens: vec![
+            indentation_token: Some(
                 token!(file_id, Whitespace, "    ", 24..28),
-            ],
+            ),
             key_tokens: vec![
                 token!(file_id, Identifier, "AlwaysVisible", 28..41),
             ],
@@ -89,14 +89,14 @@ fn general_test() {
             ),
         },
         Node {
-            indentation_tokens: vec![],
+            indentation_token: None,
             key_tokens: vec![],
             key_terminator_token: None,
             value_tokens: vec![],
             comment_token: None,
         },
         Node {
-            indentation_tokens: vec![],
+            indentation_token: None,
             key_tokens: vec![
                 token!(file_id, Identifier, "Player", 49..55),
             ],
@@ -107,9 +107,9 @@ fn general_test() {
             comment_token: None,
         },
         Node {
-            indentation_tokens: vec![
+            indentation_token: Some(
                 token!(file_id, Whitespace, "    ", 57..61),
-            ],
+            ),
             key_tokens: vec![
                 token!(file_id, Identifier, "Inherits", 61..69),
             ],

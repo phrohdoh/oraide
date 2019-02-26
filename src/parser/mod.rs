@@ -60,7 +60,7 @@ impl<'file, Tokens> Iterator for Parser<Tokens>
 
     // An iteration finishes when a node is fully-formed
     fn next(&mut self) -> Option<Self::Item> {
-        let mut indentation_tokens = Vec::<Token<'_>>::new();
+        let mut indentation_token: Option<Token<'_>> = None;
         let mut key_tokens = Vec::<Token<'_>>::new();
         let mut key_terminator_token: Option<Token<'_>> = None;
         let mut value_tokens = Vec::<Token<'_>>::new();
@@ -70,14 +70,14 @@ impl<'file, Tokens> Iterator for Parser<Tokens>
             match token.kind {
                 TokenKind::Eol => {
                     let node = Node {
-                        indentation_tokens,
+                        indentation_token,
                         key_tokens,
                         key_terminator_token,
                         value_tokens,
                         comment_token
                     };
 
-                    if !node.indentation_tokens.is_empty() || !node.key_tokens.is_empty() || !node.value_tokens.is_empty() || node.comment_token.is_some() {
+                    if node.indentation_token.is_some() || !node.key_tokens.is_empty() || !node.value_tokens.is_empty() || node.comment_token.is_some() {
                         log::debug!("emit {:#?}", node);
                     } else {
                         log::debug!("empty node");
@@ -88,7 +88,7 @@ impl<'file, Tokens> Iterator for Parser<Tokens>
                 TokenKind::Comment => comment_token = Some(token),
                 TokenKind::Whitespace => {
                     if key_tokens.is_empty() {
-                        indentation_tokens.push(token);
+                        indentation_token = Some(token);
                     } else if key_terminator_token.is_some() {
                         value_tokens.push(token);
                     } else {

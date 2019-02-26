@@ -135,8 +135,9 @@ impl fmt::Debug for Token<'_> {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Node<'file> {
-    /// Tokens that make up the whitespace before any other tokens
-    pub indentation_tokens: Vec<Token<'file>>,
+    /// Token that makes up the whitespace before any other tokens
+    /// (should always be a `Whitespace` kind)
+    pub indentation_token: Option<Token<'file>>,
 
     /// Tokens that make up the *key* portion, if any
     pub key_tokens: Vec<Token<'file>>,
