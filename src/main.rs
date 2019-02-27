@@ -1,5 +1,5 @@
 // invoke like so:
-// cargo run -- __novcs/medium.yaml ident baseplayer
+// cargo run -- __novcs/medium.yaml
 
 use std::error::Error;
 use std::str::FromStr;
@@ -13,7 +13,6 @@ use mltt_span::{
 };
 
 use language_reporting::{
-    Label,
     Diagnostic,
     ColorArg,
     termcolor::{
@@ -25,7 +24,7 @@ use language_reporting::{
 use oraml::{
     Lexer,
     Parser,
-    TokenKind,
+    Arborist,
 };
 
 fn write_diags<'files>(
@@ -52,25 +51,6 @@ fn main() -> Result<(), Box<dyn Error>> {
     args.next();
 
     let file_path = args.next().expect("Please provide a file path");
-    let token_kind: TokenKind = args.next().map(|s|
-        match &s[..] {
-            "ident" | "identifier" => TokenKind::Identifier,
-            "int" => TokenKind::IntLiteral,
-            "float" => TokenKind::FloatLiteral,
-            _ => unimplemented!("Expected token kind {:?} not supported", s),
-        }
-    ).expect("Please provide an expected token kind");
-
-    let search_text = {
-        let text = args.next().expect("Please provide a search value").trim().to_owned();
-
-        if text.is_empty() {
-            panic!("Search text must be non-empty");
-        }
-
-        text
-    };
-
     let mut f = std::fs::File::open(&file_path).expect("Failed to open provided file path");
     let mut s = String::new();
     f.read_to_string(&mut s).expect("Failed to read provided file path");
@@ -86,23 +66,6 @@ fn main() -> Result<(), Box<dyn Error>> {
     let mut lexer = Lexer::new(file);
     let tokens = lexer.by_ref().collect::<Vec<_>>();
     log::debug!("Lexed {} token(s)", tokens.len());
-
-    // === search
-
-    let search_diags = tokens
-        .iter()
-        .filter(|token| token.kind == token_kind)
-        .filter(|token| token.slice.eq_ignore_ascii_case(&search_text))
-        .map(|token|
-            Diagnostic::new_note(format!("Found {:?} {:?}", token_kind, search_text))
-                .with_label(Label::new_primary(token.span))
-        ).collect::<Vec<_>>();
-
-    write_diags(
-        &mut writer.lock(),
-        &files,
-        search_diags
-    );
 
     let lexer_diags = lexer.take_diagnostics();
 
@@ -126,6 +89,20 @@ fn main() -> Result<(), Box<dyn Error>> {
             &mut writer.lock(),
             &files,
             parser_diags
+        );
+    }
+
+    // === arborist
+
+    let mut arborist = Arborist::new(nodes.into_iter());
+    let _arena = arborist.build_tree();
+
+    let arborist_diags = arborist.take_diagnostics();
+    if !arborist_diags.is_empty() {
+        write_diags(
+            &mut writer.lock(),
+            &files,
+            arborist_diags
         );
     }
 
