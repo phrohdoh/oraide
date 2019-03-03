@@ -25,3 +25,4 @@ The `oraide` project is comprised of multiple components (some of which have dep
 | component | description |
 |-|-|
 | [oraml](./src/libs/oraml/README.md) | A library that converts text to MiniYaml trees |
+| [oraws](./src/libs/oraws/README.md) | A library that allows programmatic management of SDK-based projects |
