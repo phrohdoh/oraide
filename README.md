@@ -8,7 +8,7 @@ Proprietary.
 
 ## Project lead / point-of-contact
 
-Phrohdoh (taryn@phrohdoh.com)
+Taryn (a.k.a. Phrohdoh taryn@phrohdoh.com)
 
 ## Terms to know
 
@@ -22,12 +22,6 @@ Phrohdoh (taryn@phrohdoh.com)
 
 The `oraide` project is comprised of multiple components (some of which have dependencies on others).
 
-#### oraml
-
-A  library (implemented in [Rust](https://www.rust-lang.org)) that converts raw text, such as files on-disk, to MiniYaml trees.
-
-#### oraws (not yet implemented)
-
-A library (implemented in Rust) that allows programmatic management of SDK-based projects.
-
-Note that I am considering implementing a custom SDK-like tool (think of it like `cargo` for OpenRA-based games) at which point `oraws` will exist to manage those projects.
+| component | description |
+|-|-|
+| [oraml](./src/libs/oraml/README.md) | A library that converts text to MiniYaml trees |
