@@ -1,4 +1,5 @@
 mod types;
+mod exts;
 mod lexer;
 mod parser;
 mod arborist;
@@ -8,6 +9,9 @@ pub use types::{
     TokenKind,
     Node,
     Arena,
+};
+
+pub use exts::{
     TokenCollectionExts,
 };
 
@@ -17,6 +21,5 @@ pub use arborist::Arborist;
 
 pub use mltt_span::{
     Files,
-    // FileId,
-    // FileSpan,
+    FileSpan,
 };
