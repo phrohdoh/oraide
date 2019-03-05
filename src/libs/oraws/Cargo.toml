@@ -15,6 +15,7 @@ slog-async = "2.3.0"
 log = "0.4.6"
 
 oraml = { path = "../oraml" }
+itertools = "0.8.0"
 
 [build-dependencies]
 built = "0.3.0"
