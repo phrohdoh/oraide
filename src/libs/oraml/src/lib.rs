@@ -13,3 +13,9 @@ pub use types::{
 pub use lexer::Lexer;
 pub use parser::Parser;
 pub use arborist::Arborist;
+
+pub use mltt_span::{
+    Files,
+    // FileId,
+    // FileSpan,
+};
