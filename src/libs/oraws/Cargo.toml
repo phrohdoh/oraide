@@ -1,7 +1,20 @@
 [package]
 name = "oraws"
-version = "0.1.0"
+version = "0.0.1"
 authors = ["Taryn Hill <taryn@phrohdoh.com>"]
 edition = "2018"
+build = "build.rs"
 
 [dependencies]
+slog = "2.4.1"
+slog-stdlog = "3.0.2"
+slog-envlogger = "2.1.0"
+slog-term = "2.4.0"
+slog-scope = "4.1.1"
+slog-async = "2.3.0"
+log = "0.4.6"
+
+oraml = { path = "../oraml" }
+
+[build-dependencies]
+built = "0.3.0"
