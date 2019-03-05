@@ -280,7 +280,7 @@ pub trait TokenCollectionExts {
     fn span(&self) -> Option<FileSpan>;
 }
 
-impl TokenCollectionExts for Vec<Token<'_>> {
+impl TokenCollectionExts for [Token<'_>] {
     fn skip_leading_whitespace(&self) -> &[Token<'_>] {
         if self.is_empty() {
             return &[];
