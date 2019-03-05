@@ -271,7 +271,12 @@ impl<'file> Node<'file> {
 }
 
 pub trait TokenCollectionExts {
+    /// Get a slice of `Token`s that starts *after* leading `TokenKind::Whitespace`s
     fn skip_leading_whitespace(&self) -> &[Token<'_>];
+
+    /// Get a span covering the entire collection of `Token`s
+    /// 
+    /// Typically this is used to get the span of a single node (which, in practice, is an entire line)
     fn span(&self) -> Option<FileSpan>;
 }
 
