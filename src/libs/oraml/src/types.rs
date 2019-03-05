@@ -270,11 +270,23 @@ impl<'file> Node<'file> {
     }
 }
 
-trait TokenCollectionExts {
+pub trait TokenCollectionExts {
+    fn skip_leading_whitespace(&self) -> &[Token<'_>];
     fn span(&self) -> Option<FileSpan>;
 }
 
 impl TokenCollectionExts for Vec<Token<'_>> {
+    fn skip_leading_whitespace(&self) -> &[Token<'_>] {
+        if self.is_empty() {
+            return &[];
+        }
+
+        match self.iter().position(|token_ref| token_ref.kind != TokenKind::Whitespace) {
+            Some(idx) => &self[idx..],
+            _ => &[],
+        }
+    }
+
     fn span(&self) -> Option<FileSpan> {
         if self.is_empty() {
             return None;

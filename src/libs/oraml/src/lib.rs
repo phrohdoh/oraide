@@ -8,6 +8,7 @@ pub use types::{
     TokenKind,
     Node,
     Arena,
+    TokenCollectionExts,
 };
 
 pub use lexer::Lexer;
