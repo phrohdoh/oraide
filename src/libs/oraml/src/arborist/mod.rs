@@ -85,11 +85,16 @@ where
         std::mem::replace(&mut self.diagnostics, Vec::new())
     }
 
-    pub fn build_tree(&mut self) -> Arena<'file> {
+    /// Build a tree (backed by an `indextree::Arena`) of nodes
+    /// 
+    /// # Returns
+    /// A tuple of `(all_node_ids, arena)`
+    pub fn build_tree(&mut self) -> (Vec<ArenaNodeId>, Arena<'file>) {
         let mut arena = Arena::new();
         let parentless_sentinel_node_id = arena.new_node(Node::empty());
 
         let mut parent_node_ids = Vec::<ArenaNodeId>::new();
+        let mut all_node_ids = vec![ parentless_sentinel_node_id ];
 
         while let Some(node) = self.nodes.next() {
             if node.is_whitespace_only() {
@@ -228,6 +233,7 @@ where
                                 }
 
                                 parent_node_ids.push(node_id);
+                                all_node_ids.push(node_id);
                             },
                             IndentDelta::MoreIndented(col_num_diff) => {
                                 if is_all_space && col_num_diff != SPACES_PER_INDENT_LEVEL {
@@ -261,6 +267,7 @@ where
 
                                 let node_id = arena.new_node(node);
                                 parent_node_ids.push(node_id);
+                                all_node_ids.push(node_id);
 
                                 if let Err(e) = last_parent_node_id.append(node_id, &mut arena) {
                                     log::error!(
@@ -304,6 +311,7 @@ where
                                     let node_span_opt = node.span();
                                     let node_id = arena.new_node(node);
                                     parent_node_ids.push(node_id);
+                                    all_node_ids.push(node_id);
 
                                     if let Err(e) = parent_node_id.append(node_id, &mut arena) {
                                         let err_msg = format!(
@@ -342,6 +350,7 @@ where
 
                         let node_id = arena.new_node(node);
                         parent_node_ids.push(node_id);
+                        all_node_ids.push(node_id);
 
                         if let Err(e) = parentless_sentinel_node_id.append(node_id, &mut arena) {
                             log::error!(
@@ -362,6 +371,7 @@ where
 
                 let is_comment_only = node.is_comment_only();
                 let node_id = arena.new_node(node);
+                all_node_ids.push(node_id);
 
                 // If this node is comment-only don't track its ID
                 // as it should not be made a parent of another node.
@@ -383,7 +393,7 @@ where
         }
         */
 
-        arena
+        (all_node_ids, arena)
     }
 }
 

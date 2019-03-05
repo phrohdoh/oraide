@@ -49,10 +49,17 @@ fn general_spaces_only_indent_test() {
     let mut arborist = Arborist::new(nodes.into_iter());
 
     // Act
-    let arena = arborist.build_tree();
+    let (all_node_ids, arena) = arborist.build_tree();
 
     // Assert
-    assert_eq!(arena.count(), EXPECTED_ARENA_COUNT, "{:#?}", arena.iter().map(|arena_node| &arena_node.data).collect::<Vec<_>>());
+    let actual_arena_count = arena.count();
+    assert_eq!(actual_arena_count, EXPECTED_ARENA_COUNT, "{:#?}", arena.iter().map(|arena_node| &arena_node.data).collect::<Vec<_>>());
+    assert_eq!(all_node_ids.len(), actual_arena_count);
+
+    // We actually added each node ID to the arena
+    for id in all_node_ids {
+        assert!(arena.get(id).is_some(), "{}", id);
+    }
 
     let diags = arborist.take_diagnostics();
     let err_and_bug_diags = diags.iter()
@@ -101,10 +108,17 @@ fn general_tabs_only_indent_test() {
     let mut arborist = Arborist::new(nodes.into_iter());
 
     // Act
-    let arena = arborist.build_tree();
+    let (all_node_ids, arena) = arborist.build_tree();
 
     // Assert
-    assert_eq!(arena.count(), EXPECTED_ARENA_COUNT, "{:#?}", arena.iter().map(|arena_node| &arena_node.data).collect::<Vec<_>>());
+    let actual_arena_count = arena.count();
+    assert_eq!(actual_arena_count, EXPECTED_ARENA_COUNT, "{:#?}", arena.iter().map(|arena_node| &arena_node.data).collect::<Vec<_>>());
+    assert_eq!(all_node_ids.len(), actual_arena_count);
+
+    // We actually added each node ID to the arena
+    for id in all_node_ids {
+        assert!(arena.get(id).is_some(), "{}", id);
+    }
 
     let diags = arborist.take_diagnostics();
     let err_and_bug_diags = diags.iter()
