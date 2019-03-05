@@ -1,3 +1,6 @@
+// invoke like so:
+// cargo run -- ~/src/games/openra/engine/
+
 use std::{env, fs, io::Read as _};
 use slog::Drain;
 use oraml::TokenCollectionExts as _;
