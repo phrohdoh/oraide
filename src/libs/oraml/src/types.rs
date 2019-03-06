@@ -266,7 +266,7 @@ impl<'file> Node<'file> {
         })
     }
 
-    pub fn slice<'f>(&self, files: &'f Files) -> Option<&'f str> {
+    pub fn slice(&self, files: &'file Files) -> Option<&'file str> {
         match self.span() {
             Some(span) => files.source(span),
             _ => None,
