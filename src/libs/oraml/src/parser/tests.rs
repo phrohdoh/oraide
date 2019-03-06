@@ -25,6 +25,86 @@ macro_rules! token {
 }
 
 #[test]
+fn key_only_without_key_terminator() {
+    let _ = env_logger::try_init(); // ignore failure
+
+    // Arrange
+    let src = unindent("
+        Packages:
+            foo
+            bar: baz
+    ");
+
+    let mut files = Files::new();
+    let file_id = files.add("test", src);
+    let file = &files[file_id];
+
+    let lexer = Lexer::new(file);
+    let tokens = lexer.collect::<Vec<_>>();
+
+    let parser = Parser::new(file_id, tokens.into_iter());
+
+    // Act
+    let actual_nodes = parser.collect::<Vec<_>>();
+
+    // Assert
+    let actual_node_count = actual_nodes.len();
+
+    let expected_nodes = vec![
+        Node {
+            indentation_token: None,
+            key_tokens: vec![
+                token!(file_id, Identifier, "Packages", 0..8),
+            ],
+            key_terminator_token: Some(
+                token!(file_id, Colon, ":", 8..9),
+            ),
+            value_tokens: vec![],
+            comment_token: None,
+        },
+        Node {
+            indentation_token: Some(
+                token!(file_id, Whitespace, "    ", 10..14),
+            ),
+            key_tokens: vec![
+                token!(file_id, Identifier, "foo", 14..17),
+            ],
+            key_terminator_token: None,
+            value_tokens: vec![],
+            comment_token: None,
+        },
+        Node {
+            indentation_token: Some(
+                token!(file_id, Whitespace, "    ", 18..22),
+            ),
+            key_tokens: vec![
+                token!(file_id, Identifier, "bar", 22..25),
+            ],
+            key_terminator_token: Some(
+                token!(file_id, Colon, ":", 25..26),
+            ),
+            value_tokens: vec![
+                token!(file_id, Whitespace, " ", 26..27),
+                token!(file_id, Identifier, "baz", 27..30),
+            ],
+            comment_token: None,
+        },
+    ];
+
+    let expected_node_count = expected_nodes.len();
+
+    assert_eq!(
+        actual_nodes.len(),
+        expected_node_count,
+        "Expected {} node(s), but got {}",
+        expected_node_count,
+        actual_node_count,
+    );
+
+    assert_eq!(actual_nodes, expected_nodes);
+}
+
+#[test]
 fn general_test() {
     let _ = env_logger::try_init(); // ignore failure
 

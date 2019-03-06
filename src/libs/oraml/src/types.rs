@@ -151,7 +151,7 @@ pub struct Node<'file> {
 
     /// The token (should always be a `:`) that separates
     /// the key from the comment / value / end-of-line
-    // This is expected to be Some iif `key_tokens` is not empty
+    // This must be `None` if `key_tokens` is empty, but can also be `None` for key-only nodes (`foo` is valid).
     pub key_terminator_token: Option<Token<'file>>,
 
     /// Tokens that make up the *value* portion, if any
