@@ -1,9 +1,8 @@
 // invoke like so:
 // cargo run -- ~/src/games/openra/engine/
 
-use std::{env, fs, io::Read as _};
+use std::{env, fs, io::Read as _, path::Path};
 use slog::Drain;
-use oraml::TokenCollectionExts as _;
 
 pub mod built_meta {
     include!(concat!(env!("OUT_DIR"), "/built.rs"));
@@ -36,6 +35,9 @@ fn run() {
     let mut files = oraml::Files::new();
 
     for game in project.games() {
+        let game_id = game.id();
+        let game_abs_path = game.abs_path(&project);
+
         let manifest_path_abs = game.manifest_path_abs(&project);
 
         let manifest_content = {
@@ -67,32 +69,31 @@ fn run() {
 
         let mut iter = arena.iter().zip(all_node_ids);
 
-        let (_opt_ref_metadata_arena_node, opt_metadata_arena_node_id) = iter.find(|(arena_node, _arena_node_id)| {
+        let (_opt_ref_rules_arena_node, opt_rules_arena_node_id) = iter.find(|(arena_node, _arena_node_id)| {
             let first_key_token = match arena_node.data.key_tokens.first() {
                 Some(n) => n,
                 _ => return false,
             };
 
-            first_key_token.slice == "Metadata"
+            first_key_token.slice == "Rules"
         }).map_or((None, None), |(arena_node, arena_node_id)| (Some(&arena_node.data), Some(arena_node_id)));
 
-        if let Some(metadata_arena_node_id) = opt_metadata_arena_node_id {
-            let mut child_ids = metadata_arena_node_id.children(&arena);
+        if let Some(rules_arena_node_id) = opt_rules_arena_node_id {
+            let child_ids = rules_arena_node_id.children(&arena);
 
-            let title_node_opt = child_ids
-                .find(|&id| arena.get(id).map_or(false, |arena_node| arena_node.data.key_tokens.first().map_or(false, |token| token.slice == "Title")))
-                .and_then(|title_node_id| arena.get(title_node_id).map(|arena_node| &arena_node.data));
+            let game_id_bar_prefix = format!("{}|", game_id);
 
-            if let Some(title_node_ref) = title_node_opt {
-                let value_string = itertools::join(
-                    title_node_ref.value_tokens
-                        .skip_leading_whitespace()
-                        .iter()
-                        .map(|token_ref| token_ref.slice),
-                    ""
-                );
+            let arena_nodes = child_ids.filter_map(|id| arena.get(id));
+            let key_slices = arena_nodes.filter_map(|arena_node| arena_node.data.key_slice(&files));
+            let filtered_key_slices = key_slices.filter(|&slice| slice.starts_with(&game_id_bar_prefix));
+            let rel_slices = filtered_key_slices.map(|slice| &slice[game_id_bar_prefix.len()..]);
+            let rel_paths = rel_slices.map(|slice| Path::new(slice));
+            let rel_paths = rel_paths.collect::<Vec<_>>();
 
-                println!("{}: {}", game.id(), value_string.trim());
+            println!("-- {} at {} --", game_id, game_abs_path.display());
+            for rel_path in rel_paths {
+                let abs_path = game_abs_path.join(rel_path);
+                println!("TODO: Process {}", abs_path.display());
             }
         }
     }
