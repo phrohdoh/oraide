@@ -266,6 +266,15 @@ impl<'file> Node<'file> {
         })
     }
 
+    pub fn key_slice(&self, files: &'file Files) -> Option<&'file str> {
+        let span = match self.key_tokens.span() {
+            Some(span) => span,
+            _ => return None,
+        };
+
+        files.source(span)
+    }
+
     pub fn slice(&self, files: &'file Files) -> Option<&'file str> {
         match self.span() {
             Some(span) => files.source(span),
@@ -326,5 +335,41 @@ mod tests {
         let node_c = nodes_iter.next().unwrap();
         assert_eq!(node_c.span(), Some(FileSpan::new(file_id, 16, 31)));
         assert_eq!(node_c.slice(&files), Some("        C: auto"));
+    }
+
+    #[test]
+    fn key_slice_is_correct() {
+        // Arrange
+        let src = unindent("
+            Archer:mewo
+                Barracks: woof
+                    Cats #hoot
+        ");
+
+        let mut files = Files::new();
+        let file_id = files.add("test", src);
+        let file = &files[file_id];
+
+        let lexer = Lexer::new(file);
+        let tokens = lexer.collect::<Vec<_>>();
+
+        let parser = Parser::new(file_id, tokens.into_iter());
+
+        // Act
+        let nodes = parser.collect::<Vec<_>>();
+
+        // Assert
+        assert_eq!(nodes.len(), 3);
+
+        let mut nodes_iter = nodes.iter();
+
+        let node_a = nodes_iter.next().unwrap();
+        assert_eq!(node_a.key_slice(&files), Some("Archer"));
+
+        let node_b = nodes_iter.next().unwrap();
+        assert_eq!(node_b.key_slice(&files), Some("Barracks"));
+
+        let node_c = nodes_iter.next().unwrap();
+        assert_eq!(node_c.key_slice(&files), Some("Cats "));
     }
 }
