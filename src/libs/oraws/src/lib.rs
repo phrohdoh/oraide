@@ -1,4 +1,7 @@
 use std::{
+    collections::{
+        HashMap,
+    },
     fs::{
         self,
         DirEntry,
@@ -13,8 +16,8 @@ use std::{
 use slog::o;
 
 pub struct Project {
-    root_dir_path: PathBuf,
-    games: Vec<Game>,
+    pub root_dir_path: PathBuf,
+    pub games: HashMap<String, Game>,
 }
 
 impl Project {
@@ -52,8 +55,8 @@ impl Project {
             let entry = entry.ok()?;
             let path = entry.path();
 
-            match Game::new_from_dir_entry(&entry) {
-                Ok(game) => Some(game),
+            let game = match Game::new_from_dir_entry(&entry) {
+                Ok(game) => game,
                 Err(e_str) => {
                     log::debug!(
                         "Skipping `{}`: {}",
@@ -63,17 +66,17 @@ impl Project {
 
                     return None;
                 },
-            }
-        }).collect::<Vec<_>>();
+            };
+
+            let tup = (game.id.clone(), game);
+            log::trace!("Adding game `{}` at `{}` to gamedb", tup.0, path.display());
+            Some(tup)
+        }).collect::<HashMap<_, _>>();
 
         Ok(Self {
             root_dir_path: project_root_dir.to_path_buf(),
             games,
         })
-    }
-
-    pub fn games(&self) -> &[Game] {
-        &self.games
     }
 }
 
