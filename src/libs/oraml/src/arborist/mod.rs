@@ -4,7 +4,14 @@ use mltt_span::{FileSpan};
 
 use indextree::{NodeId as ArenaNodeId};
 
-use crate::{Arena, Node};
+use crate::{
+    types::{
+        Arena,
+    },
+
+    Node,
+    Tree,
+};
 
 // https://github.com/OpenRA/OpenRA/blob/30103da2db58b8fba09b45b6d9dfbb7049a2c449/OpenRA.Game/MiniYaml.cs#L93
 const SPACES_PER_INDENT_LEVEL: usize = 4;
@@ -88,8 +95,8 @@ where
     /// Build a tree (backed by an `indextree::Arena`) of nodes
     /// 
     /// # Returns
-    /// A tuple of `(all_node_ids, arena)`
-    pub fn build_tree(&mut self) -> (Vec<ArenaNodeId>, Arena<'file>) {
+    /// A `oraml::Tree` struct instance
+    pub fn build_tree(&mut self) -> Tree<'file> {
         let mut arena = Arena::new();
         let parentless_sentinel_node_id = arena.new_node(Node::empty());
 
@@ -393,7 +400,7 @@ where
         }
         */
 
-        (all_node_ids, arena)
+        Tree::new(all_node_ids, arena)
     }
 }
 

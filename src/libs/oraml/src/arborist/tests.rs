@@ -9,6 +9,7 @@ use mltt_span::{
 use crate::{
     Lexer,
     Parser,
+    Tree,
     arborist::{
         Arborist,
     },
@@ -49,15 +50,15 @@ fn general_spaces_only_indent_test() {
     let mut arborist = Arborist::new(nodes.into_iter());
 
     // Act
-    let (all_node_ids, arena) = arborist.build_tree();
+    let Tree { node_ids, arena } = arborist.build_tree();
 
     // Assert
     let actual_arena_count = arena.count();
     assert_eq!(actual_arena_count, EXPECTED_ARENA_COUNT, "{:#?}", arena.iter().map(|arena_node| &arena_node.data).collect::<Vec<_>>());
-    assert_eq!(all_node_ids.len(), actual_arena_count);
+    assert_eq!(node_ids.len(), actual_arena_count);
 
     // We actually added each node ID to the arena
-    for id in all_node_ids {
+    for id in node_ids {
         assert!(arena.get(id).is_some(), "{}", id);
     }
 
@@ -108,15 +109,15 @@ fn general_tabs_only_indent_test() {
     let mut arborist = Arborist::new(nodes.into_iter());
 
     // Act
-    let (all_node_ids, arena) = arborist.build_tree();
+    let Tree { node_ids, arena } = arborist.build_tree();
 
     // Assert
     let actual_arena_count = arena.count();
     assert_eq!(actual_arena_count, EXPECTED_ARENA_COUNT, "{:#?}", arena.iter().map(|arena_node| &arena_node.data).collect::<Vec<_>>());
-    assert_eq!(all_node_ids.len(), actual_arena_count);
+    assert_eq!(node_ids.len(), actual_arena_count);
 
     // We actually added each node ID to the arena
-    for id in all_node_ids {
+    for id in node_ids {
         assert!(arena.get(id).is_some(), "{}", id);
     }
 

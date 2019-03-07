@@ -9,6 +9,7 @@ use mltt_span::{
     FileSpan,
 };
 
+use indextree::NodeId as ArenaNodeId;
 pub type Arena<'file> = indextree::Arena<Node<'file>>;
 
 /// A tag that makes it easier to store what type of token this is
@@ -283,6 +284,25 @@ impl<'file> Node<'file> {
     }
 }
 
+/// A struct that groups an `indextree::Arena` with all of its
+/// `indextree::NodeId`s
+pub struct Tree<'file> {
+    /// All IDs for nodes that exist in `arena`, even the parent-less sentinel
+    pub node_ids: Vec<ArenaNodeId>,
+
+    /// The `indextree::Arena` that contains `Node`s
+    pub arena: Arena<'file>,
+}
+
+impl<'file> Tree<'file> {
+    /// Create a new instace of an `oraml::Tree`
+    pub fn new(node_ids: Vec<ArenaNodeId>, arena: Arena<'file>) -> Self {
+        Self {
+            node_ids,
+            arena,
+        }
+    }
+}
 
 #[cfg(test)]
 mod tests {

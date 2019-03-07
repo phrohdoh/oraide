@@ -4,6 +4,8 @@
 use std::{env, fs, io::Read as _};
 use slog::Drain;
 
+use oraml::Tree;
+
 pub mod built_meta {
     include!(concat!(env!("OUT_DIR"), "/built.rs"));
 }
@@ -62,7 +64,7 @@ fn run() {
 
         // TODO: Wrap all this up in `oraml`
         let manifest_file_id = files.add(format!("{}", manifest_path_abs.display()), manifest_content);
-        let (all_node_ids, arena) = {
+        let Tree { node_ids, arena } = {
             let lexer = oraml::Lexer::new(&files[manifest_file_id]);
             let tokens = lexer.collect::<Vec<_>>();
 
@@ -73,7 +75,7 @@ fn run() {
             arborist.build_tree()
         };
 
-        let mut iter = arena.iter().zip(all_node_ids);
+        let mut iter = arena.iter().zip(node_ids);
 
         let (_opt_ref_rules_arena_node, opt_rules_arena_node_id) = iter.find(|(arena_node, _arena_node_id)| {
             let first_key_token = match arena_node.data.key_tokens.first() {

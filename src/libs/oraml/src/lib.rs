@@ -8,7 +8,7 @@ pub use types::{
     Token,
     TokenKind,
     Node,
-    Arena,
+    Tree,
 };
 
 pub use exts::{
