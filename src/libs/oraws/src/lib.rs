@@ -131,14 +131,6 @@ impl Game {
             ));
         }
 
-        let manifest_path = path.join("mod.yaml");
-        if !manifest_path.exists() {
-            return Err(format!(
-                "Expected manifest to exist, but it does not: `{}`",
-                manifest_path.display(),
-            ));
-        }
-
         let game = match Game::new_from_abs_dir(path) {
             Ok(g) => g,
             Err(e_str) => return Err(format!(
