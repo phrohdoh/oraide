@@ -1,7 +1,7 @@
 // invoke like so:
 // cargo run -- ~/src/games/openra/engine/
 
-use std::{env, fs, io::Read as _, path::Path};
+use std::{env, fs, io::Read as _};
 use slog::Drain;
 
 pub mod built_meta {
@@ -28,24 +28,30 @@ fn main() {
 
 fn run() {
     let root_dir_arg = env::args().nth(1).expect("Please provide a directory path");
+    let mut files = oraml::Files::new();
 
     let project = oraws::Project::new_from_abs_dir(root_dir_arg)
         .expect("Failed to create Project from directory");
 
-    let mut files = oraml::Files::new();
+    for (game_id, shrd_game) in &project.games {
+        let game_abs_path = shrd_game.abs_path(&project);
 
-    for game in project.games() {
-        let game_id = game.id();
-        let game_abs_path = game.abs_path(&project);
-
-        let manifest_path_abs = game.manifest_path_abs(&project);
+        let manifest_path_abs = shrd_game.manifest_path_abs(&project);
 
         let manifest_content = {
             let mut s = String::new();
-            let mut f = fs::File::open(&manifest_path_abs).expect(&format!(
-                "Failed to open file `{}`",
-                manifest_path_abs.display(),
-            ));
+            let mut f = match fs::File::open(&manifest_path_abs) {
+                Ok(f) => f,
+                Err(_e) => {
+                    log::warn!(
+                        "Failed to open game manifest `{}`, does `{}` have a root-level manifest file?",
+                        manifest_path_abs.display(),
+                        game_id,
+                    );
+
+                    continue;
+                },
+            };
 
             f.read_to_string(&mut s).expect(&format!(
                 "Failed to read file `{}`",
@@ -81,19 +87,43 @@ fn run() {
         if let Some(rules_arena_node_id) = opt_rules_arena_node_id {
             let child_ids = rules_arena_node_id.children(&arena);
 
-            let game_id_bar_prefix = format!("{}|", game_id);
-
+            // get the arena nodes
             let arena_nodes = child_ids.filter_map(|id| arena.get(id));
-            let key_slices = arena_nodes.filter_map(|arena_node| arena_node.data.key_slice(&files));
-            let filtered_key_slices = key_slices.filter(|&slice| slice.starts_with(&game_id_bar_prefix));
-            let rel_slices = filtered_key_slices.map(|slice| &slice[game_id_bar_prefix.len()..]);
-            let rel_paths = rel_slices.map(|slice| Path::new(slice));
-            let rel_paths = rel_paths.collect::<Vec<_>>();
 
-            println!("-- {} at {} --", game_id, game_abs_path.display());
-            for rel_path in rel_paths {
-                let abs_path = game_abs_path.join(rel_path);
-                println!("TODO: Process {}", abs_path.display());
+            // get the key text
+            let key_slices = arena_nodes.filter_map(|arena_node| arena_node.data.key_slice(&files));
+
+            // split on '|'
+            let pipe_splits = key_slices.filter_map(|slice| {
+                let mut split = slice.splitn(2, '|');
+                match (split.next(), split.next()) {
+                    (Some(pfx), Some(sfx)) => Some((pfx, sfx)),
+                    _ => None,
+                }
+            });
+
+            // get the resolved, absolute paths
+            let abs_paths = pipe_splits.filter_map(|(game_id, rel_path)| {
+                let shrd_game = match project.games.get(game_id) {
+                    Some(g) => g,
+                    _ => panic!("Game not found in gamedb"),
+                };
+
+                let game_abs_path = shrd_game.abs_path(&project);
+                Some(game_abs_path.join(rel_path))
+            }).collect::<Vec<_>>();
+
+            log::info!("-- {} at {} --", game_id, game_abs_path.display());
+            for abs_path in abs_paths {
+                let abs_path_display = format!("{}", abs_path.display());
+                log::info!("  TODO {} ...", abs_path_display);
+
+                //files.add(abs_path_display, {
+                //    let mut f = fs::File::open(abs_path).unwrap();
+                //    let mut s = String::new();
+                //    let _ = f.read_to_string(&mut s).unwrap();
+                //    s
+                //});
             }
         }
     }
