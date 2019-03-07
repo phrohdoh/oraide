@@ -1,10 +1,25 @@
 // invoke like so:
 // cargo run -- ~/src/games/openra/engine/
 
-use std::{env, fs, io::Read as _};
+use std::{
+    env,
+    fs,
+    path::Path,
+    io::Read as _,
+    collections::HashMap,
+};
+
 use slog::Drain;
 
-use oraml::Tree;
+use oraml::{
+    Lexer,
+    Parser,
+    Arborist,
+    Tree,
+    File,
+    FileId,
+    Files,
+};
 
 pub mod built_meta {
     include!(concat!(env!("OUT_DIR"), "/built.rs"));
@@ -28,52 +43,81 @@ fn main() {
     slog_scope::scope(&logger, run);
 }
 
+fn add_file_to_files_db<'files, P: AsRef<Path>>(files: &'files mut Files, path: P) -> Result<FileId, String> {
+    let path = path.as_ref();
+    let path_display = path.display();
+
+    let content = {
+        let mut f = fs::File::open(path).map_err(|e| format!("Failed to open `{}`: {}", path_display, e))?;
+        let mut s = String::new();
+        f.read_to_string(&mut s).map_err(|e| format!("Failed to read `{}`: {}", path_display, e))?;
+
+        s
+    };
+
+    let file_id = files.add(path_display.to_string(), content);
+    Ok(file_id)
+}
+
+fn get_tree_from_file<'files>(file: &'files File) -> Result<Tree<'files>, String> {
+    let lexer = Lexer::new(file);
+    let tokens = lexer.collect::<Vec<_>>();
+
+    let parser = Parser::new(tokens.into_iter());
+    let nodes = parser.collect::<Vec<_>>();
+
+    let mut arborist = Arborist::new(nodes.into_iter());
+    Ok(arborist.build_tree())
+}
+
 fn run() {
     let root_dir_arg = env::args().nth(1).expect("Please provide a directory path");
-    let mut files = oraml::Files::new();
+    let mut files = Files::new();
+    let mut map_fpath_to_fid = HashMap::new();
 
     let project = oraws::Project::new_from_abs_dir(root_dir_arg)
         .expect("Failed to create Project from directory");
 
     for (game_id, shrd_game) in &project.games {
-        let game_abs_path = shrd_game.abs_path(&project);
-
         let manifest_path_abs = shrd_game.manifest_path_abs(&project);
 
-        let manifest_content = {
-            let mut s = String::new();
-            let mut f = match fs::File::open(&manifest_path_abs) {
-                Ok(f) => f,
-                Err(_e) => {
+        log::info!("Processing `{}` manifest at {}", game_id, manifest_path_abs.display());
+
+        let manifest_tree = {
+            let file_id = match add_file_to_files_db(&mut files, &manifest_path_abs) {
+                Ok(fid) => {
+                    map_fpath_to_fid.insert(manifest_path_abs.clone(), fid);
+
+                    fid
+                },
+                Err(e) => {
                     log::warn!(
-                        "Failed to open game manifest `{}`, does `{}` have a root-level manifest file?",
+                        "Failed to process game manifest at {}: {}",
                         manifest_path_abs.display(),
-                        game_id,
+                        e,
                     );
 
                     continue;
                 },
             };
 
-            f.read_to_string(&mut s).expect(&format!(
-                "Failed to read file `{}`",
-                manifest_path_abs.display(),
-            ));
-            s
+            let shrd_file = &files[file_id];
+
+            match get_tree_from_file(shrd_file) {
+                Ok(tree) => tree,
+                Err(e) => {
+                    log::warn!(
+                        "Failed to process game manifest at {}: {}",
+                        manifest_path_abs.display(),
+                        e,
+                    );
+
+                    continue;
+                },
+            }
         };
 
-        // TODO: Wrap all this up in `oraml`
-        let manifest_file_id = files.add(format!("{}", manifest_path_abs.display()), manifest_content);
-        let Tree { node_ids, arena } = {
-            let lexer = oraml::Lexer::new(&files[manifest_file_id]);
-            let tokens = lexer.collect::<Vec<_>>();
-
-            let parser = oraml::Parser::new(manifest_file_id, tokens.into_iter());
-            let nodes = parser.collect::<Vec<_>>();
-
-            let mut arborist = oraml::Arborist::new(nodes.into_iter());
-            arborist.build_tree()
-        };
+        let Tree { node_ids, arena } = manifest_tree;
 
         let mut iter = arena.iter().zip(node_ids);
 
@@ -115,18 +159,40 @@ fn run() {
                 Some(game_abs_path.join(rel_path))
             }).collect::<Vec<_>>();
 
-            log::info!("-- {} at {} --", game_id, game_abs_path.display());
             for abs_path in abs_paths {
-                let abs_path_display = format!("{}", abs_path.display());
-                log::info!("  TODO {} ...", abs_path_display);
+                log::info!("  Processing {} ...", abs_path.display());
 
-                //files.add(abs_path_display, {
-                //    let mut f = fs::File::open(abs_path).unwrap();
-                //    let mut s = String::new();
-                //    let _ = f.read_to_string(&mut s).unwrap();
-                //    s
-                //});
+                let file_id = match add_file_to_files_db(&mut files, &abs_path) {
+                    Ok(fid) => {
+                        map_fpath_to_fid.insert(abs_path.clone(), fid);
+
+                        fid
+                    },
+                    Err(_e) => continue,
+                };
+
+                let shrd_file = &files[file_id];
+                let tree = get_tree_from_file(shrd_file).unwrap();
+                let node_count = tree.node_ids.len();
+                let top_level_node_count = tree.node_ids.iter()
+                    // skip the parent-less sentinel
+                    .skip(1)
+                    .filter_map(|&nid| tree.arena.get(nid))
+                    // 'empty' nodes are technically top-level but we don't want to count them in this metric
+                    .filter_map(|arena_node| if arena_node.data.is_empty() { None } else { Some(&arena_node.data.indentation_token) })
+                    .filter(|shrd_indent_token| shrd_indent_token.is_none())
+                    .count();
+
+                log::info!(
+                    "     created tree with {} nodes total, {} top-level nodes",
+                    node_count,
+                    top_level_node_count,
+                );
             }
         }
+    }
+
+    for (fpath, fid) in &map_fpath_to_fid {
+        log::warn!("{} -> {:?}", fpath.display(), fid);
     }
 }
