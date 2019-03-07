@@ -20,7 +20,7 @@ impl TokenCollectionExts for [Token<'_>] {
             return &[];
         }
 
-        match self.iter().position(|token_ref| token_ref.kind != TokenKind::Whitespace) {
+        match self.iter().position(|shrd_token| shrd_token.kind != TokenKind::Whitespace) {
             Some(idx) => &self[idx..],
             _ => &[],
         }

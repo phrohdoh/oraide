@@ -121,7 +121,7 @@ fn run() {
 
         let mut iter = arena.iter().zip(node_ids);
 
-        let (_opt_ref_rules_arena_node, opt_rules_arena_node_id) = iter.find(|(arena_node, _arena_node_id)| {
+        let (_opt_shrd_rules_arena_node, opt_rules_arena_node_id) = iter.find(|(arena_node, _arena_node_id)| {
             let first_key_token = match arena_node.data.key_tokens.first() {
                 Some(n) => n,
                 _ => return false,

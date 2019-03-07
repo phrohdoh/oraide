@@ -124,8 +124,8 @@ where
             }
 
             // if `node` is indented
-            if let Some(node_indent_token_ref) = node.indentation_token.as_ref() {
-                let node_indent_slice = node_indent_token_ref.slice;
+            if let Some(shrd_node_indent_token) = node.indentation_token.as_ref() {
+                let node_indent_slice = shrd_node_indent_token.slice;
                 let node_indent_slice_len = node_indent_slice.len();
 
                 let is_all_space = node_indent_slice.chars().all(|ch| ch == ' ');
@@ -135,7 +135,7 @@ where
                     self.add_diagnostic(
                         Diagnostic::new_error("Indentation must be entirely made up of either spaces or tabs, but not both")
                             .with_code("A:E0001")
-                            .with_label(Label::new_primary(node_indent_token_ref.span.clone()))
+                            .with_label(Label::new_primary(shrd_node_indent_token.span.clone()))
                     );
 
                     let node_id = arena.new_node(node);
@@ -159,7 +159,7 @@ where
                             "Column number must be a multiple of {} when using spaces",
                             SPACES_PER_INDENT_LEVEL
                         )).with_code("A:E0002")
-                          .with_label(Label::new_primary(node_indent_token_ref.span.clone()))
+                          .with_label(Label::new_primary(shrd_node_indent_token.span.clone()))
                     );
 
                     self.add_diagnostic(
@@ -174,7 +174,7 @@ where
                     Some(last_parent_node_id) => {
                         let last_parent_node_id = *last_parent_node_id;
 
-                        let last_parent_node_ref = match arena.get(last_parent_node_id) {
+                        let shrd_last_parent_node = match arena.get(last_parent_node_id) {
                             Some(n) => n,
                             None => {
                                 let msg = format!(
@@ -194,19 +194,19 @@ where
                             },
                         };
 
-                        match calc_indent_delta(&last_parent_node_ref.data, &node) {
+                        match calc_indent_delta(&shrd_last_parent_node.data, &node) {
                             IndentDelta::NoChange => {
                                 let _sibling_id = parent_node_ids.pop(); // remove the sibling's ID
                                 let node_span_opt = node.span();
                                 let node_id = arena.new_node(node);
 
                                 match parent_node_ids.last() {
-                                    Some(last_parent_node_id_ref) => {
-                                        if let Err(e) = last_parent_node_id_ref.append(node_id, &mut arena) {
+                                    Some(shrd_last_parent_node_id) => {
+                                        if let Err(e) = shrd_last_parent_node_id.append(node_id, &mut arena) {
                                             let err_msg = format!(
                                                 "Got an error attempting to make `{}` a child of `{}`: {:?}",
                                                 node_id,
-                                                last_parent_node_id_ref,
+                                                shrd_last_parent_node_id,
                                                 e
                                             );
 
@@ -298,12 +298,12 @@ where
 
                                     let mut iter = parent_node_ids.iter().rev();
                                     iter.find(|&&id| {
-                                        let iter_node_ref = match arena.get(id) {
+                                        let shrd_iter_node = match arena.get(id) {
                                             Some(n) => &n.data,
                                             _ => return false,
                                         };
 
-                                        let indent_delta = calc_indent_delta(&node, iter_node_ref);
+                                        let indent_delta = calc_indent_delta(&node, shrd_iter_node);
                                         indent_delta == desired_indent_delta
                                     }).map(|id| *id)
                                 };
