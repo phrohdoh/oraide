@@ -20,6 +20,7 @@ pub use parser::Parser;
 pub use arborist::Arborist;
 
 pub use mltt_span::{
+    File,
     Files,
     FileSpan,
 };
