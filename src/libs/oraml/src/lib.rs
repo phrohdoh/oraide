@@ -21,6 +21,7 @@ pub use arborist::Arborist;
 
 pub use mltt_span::{
     File,
+    FileId,
     Files,
     FileSpan,
 };
