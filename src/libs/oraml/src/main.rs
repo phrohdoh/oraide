@@ -79,7 +79,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     // === parser
 
-    let mut parser = Parser::new(file_id, tokens.into_iter());
+    let mut parser = Parser::new(tokens.into_iter());
     let nodes = parser.by_ref().collect::<Vec<_>>();
     log::debug!("Parsed {} node(s)", nodes.len());
 

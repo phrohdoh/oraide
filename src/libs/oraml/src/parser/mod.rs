@@ -6,7 +6,6 @@ use language_reporting::{
 };
 
 use mltt_span::{
-    FileId,
     FileSpan,
 };
 
@@ -20,9 +19,6 @@ use crate::{
 
 /// Transform a stream of tokens into a stream of line-based nodes
 pub struct Parser<Tokens: Iterator> {
-    /// A handle to the file we're parsing
-    file_id: FileId,
-
     /// The underlying stream of tokens
     tokens: MultiPeek<Tokens>,
 
@@ -34,9 +30,8 @@ impl<'file, Tokens> Parser<Tokens>
     where Tokens: Iterator<Item = Token<'file>> + 'file,
 {
     /// Create a new parser from an iterator of `Token`s
-    pub fn new(file_id: FileId, tokens: Tokens) -> Parser<Tokens> {
+    pub fn new(tokens: Tokens) -> Parser<Tokens> {
         Self {
-            file_id,
             tokens: itertools::multipeek(tokens),
             diagnostics: vec![],
         }
@@ -135,7 +130,7 @@ impl<'file, Tokens> Iterator for Parser<Tokens>
                             let mut diag = Diagnostic::new_note("Nodes must be entirely empty, have a key, or have a comment, they can not be value-only");
 
                             if let Some(tok_eol) = opt_tok_eol {
-                                let span = FileSpan::new(self.file_id, span_colon.start(), tok_eol.span.start());
+                                let span = FileSpan::new(span_colon.source(), span_colon.start(), tok_eol.span.start());
                                 diag = diag.with_label(Label::new_secondary(span));
                             }
 

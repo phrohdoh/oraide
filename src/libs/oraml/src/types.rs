@@ -334,7 +334,7 @@ mod tests {
         let lexer = Lexer::new(file);
         let tokens = lexer.collect::<Vec<_>>();
 
-        let parser = Parser::new(file_id, tokens.into_iter());
+        let parser = Parser::new(tokens.into_iter());
 
         // Act
         let nodes = parser.collect::<Vec<_>>();
@@ -373,7 +373,7 @@ mod tests {
         let lexer = Lexer::new(file);
         let tokens = lexer.collect::<Vec<_>>();
 
-        let parser = Parser::new(file_id, tokens.into_iter());
+        let parser = Parser::new(tokens.into_iter());
 
         // Act
         let nodes = parser.collect::<Vec<_>>();

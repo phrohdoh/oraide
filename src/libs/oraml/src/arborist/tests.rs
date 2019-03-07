@@ -44,7 +44,7 @@ fn general_spaces_only_indent_test() {
 
     let lexer = Lexer::new(file);
     let tokens = lexer.collect::<Vec<_>>();
-    let parser = Parser::new(file_id, tokens.into_iter());
+    let parser = Parser::new(tokens.into_iter());
     let nodes = parser.collect::<Vec<_>>();
 
     let mut arborist = Arborist::new(nodes.into_iter());
@@ -103,7 +103,7 @@ fn general_tabs_only_indent_test() {
 
     let lexer = Lexer::new(file);
     let tokens = lexer.collect::<Vec<_>>();
-    let parser = Parser::new(file_id, tokens.into_iter());
+    let parser = Parser::new(tokens.into_iter());
     let nodes = parser.collect::<Vec<_>>();
 
     let mut arborist = Arborist::new(nodes.into_iter());
