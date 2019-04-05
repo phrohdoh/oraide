@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+
+### Make a Language Server message given a path to a JSON file ###
+#
+# 0) Create the `ORALS` fifo from the `orals` directory (do this only 1 time!):
+# $ mkfifo ORALS
+#
+# 1) Launch the `orals` executable from the `orals` directory:
+# $ RUST_LOG=orals=trace cargo run --bin orals -- < ORALS
+#
+# 2) Invoke `mkmsg` (this script) from the `orals` directory:
+# $ ./tools/mkmsg test_messages/basic.json > ORALS
+
+# - read json file (file path given as 1st cli arg)
+json_file_path="$1"
+json_str="$(cat $json_file_path)"
+
+# - calc byte len of json str
+json_str_byte_len=${#json_str}
+
+# - create header str
+header_str="content-length: ${json_str_byte_len}\r\n\r\n"
+
+# - concat header + json body
+message_str="${header_str}${json_str}"
+
+# - write concat'd str to stdout
+printf "$message_str"

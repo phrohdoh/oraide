@@ -2,3 +2,4 @@
 **/*/target
 **/*.rs.bk
 Cargo.lock
+src/libs/orals/ORALS # FIFO, read `./src/libs/orals/tools/mkmsg` to learn more
