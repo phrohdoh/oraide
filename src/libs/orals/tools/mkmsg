@@ -9,7 +9,7 @@
 # $ RUST_LOG=orals=trace cargo run --bin orals -- < ORALS
 #
 # 2) Invoke `mkmsg` (this script) from the `orals` directory:
-# $ ./tools/mkmsg test_messages/basic.json > ORALS
+# $ ./tools/mkmsg test_messages/hover.json > ORALS
 
 # - read json file (file path given as 1st cli arg)
 json_file_path="$1"
