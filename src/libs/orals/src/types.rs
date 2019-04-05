@@ -185,7 +185,7 @@ fn read_message(input: &mut impl BufRead) -> Result<String, io::Error> {
             break;
         }
 
-        let res = buf.split(' ').collect::<Vec<_>>();
+        let res = buf.split(':').collect::<Vec<_>>();
         if res.len() != 2 {
             return Err(io::Error::new(
                 io::ErrorKind::InvalidData,
@@ -198,7 +198,7 @@ fn read_message(input: &mut impl BufRead) -> Result<String, io::Error> {
         log::debug!("Header `{}` = `{}`", hdr_name, hdr_value);
 
         match hdr_name.as_ref() {
-            "content-length:" => {
+            "content-length" => {
                 content_length = Some(
                     usize::from_str_radix(hdr_value, 10)
                         .map_err(|_e| io::Error::new(
@@ -212,7 +212,7 @@ fn read_message(input: &mut impl BufRead) -> Result<String, io::Error> {
                     )?
                 );
             },
-            "content-type:" => {
+            "content-type" => {
                 if hdr_value != "utf8" {
                     return Err(io::Error::new(
                         io::ErrorKind::InvalidData,
