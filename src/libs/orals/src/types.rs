@@ -123,7 +123,7 @@ impl<O: Output> LangServerService<O> {
                         <$request as LspRequest>::METHOD => {
                             let _req: Request<$request> = msg.parse_as_request()?;
 
-                            unimplemented!(stringify!($request))
+                            unimplemented!("LspRequest `{}`", stringify!($request))
                         },
                     )*
                     _ => unimplemented!("method `{}`", $method.as_str()),
