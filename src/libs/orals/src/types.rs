@@ -155,10 +155,11 @@ impl MsgReader for StdinMsgReader {
     fn read_message(&self) -> Option<String> {
         let stdin = io::stdin();
         let mut locked = stdin.lock();
+
         match read_message(&mut locked) {
             Ok(message) => Some(message),
             Err(err) => {
-                log::error!("{:?}", err);
+                log::error!("Error reading message: {:?}", err);
                 None
             }
         }
