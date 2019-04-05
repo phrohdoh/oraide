@@ -1,0 +1,13 @@
+{
+    "id": 5,
+    "method": "textDocument/hover",
+    "params": {
+        "textDocument": {
+            "uri": "file:///mydoc.yaml"
+        },
+        "position": {
+            "line": 1,
+            "character": 18
+        }
+    }
+}
