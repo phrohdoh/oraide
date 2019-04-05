@@ -39,16 +39,16 @@ use crate::lsp::{
     RawMessage,
 };
 
-pub struct LangServerService<O: Output> {
-    reader: Box<dyn MsgReader + Send + Sync>,
-    output: O,
-}
-
 /// Indicates how the server should proceed
 #[derive(Eq, PartialEq, Debug, Clone, Copy)]
 pub enum ServerStateChange {
     Continue,
     Exit { code: i32 },
+}
+
+pub struct LangServerService<O: Output> {
+    reader: Box<dyn MsgReader + Send + Sync>,
+    output: O,
 }
 
 impl<O: Output> LangServerService<O> {
