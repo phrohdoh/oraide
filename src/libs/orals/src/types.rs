@@ -32,11 +32,16 @@ use jsonrpc_core::{
     version,
 };
 
-use crate::lsp::{
-    // Response, // TODO
-    Request,
-    RequestId,
-    RawMessage,
+use crate::{
+    lsp::{
+        // Response, // TODO
+        Request,
+        RequestId,
+        RawMessage,
+    },
+    dispatch::{
+        Dispatcher,
+    },
 };
 
 /// Indicates how the server should proceed
@@ -49,6 +54,7 @@ pub enum ServerStateChange {
 pub struct LangServerService<O: Output> {
     reader: Box<dyn MsgReader + Send + Sync>,
     output: O,
+    dispatcher: Dispatcher,
 }
 
 impl<O: Output> LangServerService<O> {
@@ -57,9 +63,12 @@ impl<O: Output> LangServerService<O> {
         reader: Box<dyn MsgReader + Send + Sync>,
         output: O,
     ) -> LangServerService<O> {
+        let dispatcher = Dispatcher::new(output.clone());
+
         Self {
             reader,
             output,
+            dispatcher,
         }
     }
 
@@ -114,18 +123,39 @@ impl<O: Output> LangServerService<O> {
     fn dispatch_message(&mut self, msg: &RawMessage) -> Result<(), jsonrpc::Error> {
         macro_rules! action {
             (
-                $method:expr;
-                blocking_requests: $($br_action:ty),*;
+                $method: expr;
+                blocking_requests: $($blocking_request:ty),*;
                 requests: $($request: ty),*;
             ) => {
                 match $method.as_str() {
                     $(
-                        <$request as LspRequest>::METHOD => {
-                            let _req: Request<$request> = msg.parse_as_request()?;
+                        <$blocking_request as LspRequest>::METHOD => {
+                            let req: Request<$blocking_request> = msg.parse_as_request()?;
 
-                            unimplemented!("LspRequest `{}`", stringify!($request))
+                            // TODO: Wait for concurrent jobs
+                            // https://github.com/rust-lang/rls/blob/609829a2d4477a20438bed00e3846098be898fdd/rls/src/server/mod.rs#L234-L236
+
+                            let req_id = req.id.clone();
+                            match req.blocking_dispatch(&self.output) {
+                                Ok(resp) => resp.send_success(req_id, &self.output),
+                                _ => unimplemented!(), // TODO
+                            }
+
+                            // TODO
+                            unimplemented!("Blocking LspRequest `{}`", stringify!($blocking_request))
                         },
                     )*
+
+                    $(
+                        <$request as LspRequest>::METHOD => {
+                            let req: Request<$request> = msg.parse_as_request()?;
+
+                            // TODO: Check if we've been `init`'d yet
+                            // https://github.com/rust-lang/rls/blob/17a439440e6b00b1f014a49c6cf47752ecae5bb7/rls/src/server/mod.rs#L260
+                            self.dispatcher.dispatch(req);
+                        },
+                    )*
+
                     _ => unimplemented!("method `{}`", $method.as_str()),
                 }
             }
@@ -254,7 +284,7 @@ pub trait Output: Sync + Send + Clone + 'static {
     fn gen_unique_id(&self) -> RequestId;
 
     /// Sends a successful notification or response along this output
-    fn send_success<D: serde::Serialize + fmt::Debug>(&self, id: String, data: &D) {
+    fn send_success<D: serde::Serialize + fmt::Debug>(&self, id: RequestId, data: &D) {
         let data = match serde_json::to_string(data) {
             Ok(d) => d,
             Err(e) => {
@@ -264,7 +294,7 @@ pub trait Output: Sync + Send + Clone + 'static {
             },
         };
 
-        let output = format!("{{\"jsonrpc\":\"2.0\",\"id\":\"{}\",\"result\":{}}}", id, data);
+        let output = format!("{{\"jsonrpc\":\"2.0\",\"id\":{},\"result\":{}}}", id, data);
         self.send_response(output);
     }
 
@@ -309,7 +339,13 @@ impl StdoutOutput {
 /// A response to some request
 pub trait Response {
     /// Send the reponse along the given output
-    fn send<O: Output>(self, id: RequestId, output: O);
+    fn send<O: Output>(self, id: RequestId, output: &O);
+}
+
+impl<R: serde::Serialize + fmt::Debug> Response for R {
+    fn send<O: Output>(self, id: RequestId, out: &O) {
+        out.send_success(id, &self)
+    }
 }
 
 /// Wrapper for a response error

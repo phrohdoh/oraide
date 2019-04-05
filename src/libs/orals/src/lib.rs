@@ -1,5 +1,9 @@
 mod types;
 mod lsp;
+mod work_pool;
+mod dispatch;
+mod requests;
+mod concurrency;
 
 pub use types::{
     MsgReader,

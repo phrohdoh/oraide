@@ -4,6 +4,7 @@
 use std::{
     marker::PhantomData,
     time::Instant,
+    fmt,
 };
 
 use serde::de::Deserialize as _;
@@ -20,6 +21,15 @@ use jsonrpc_core::{
 pub enum RequestId {
     Str(String),
     Num(u64),
+}
+
+impl fmt::Display for RequestId {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            RequestId::Str(ref s) => write!(f, "\"{}\"", s),
+            RequestId::Num(n) => write!(f, "{}", n),
+        }
+    }
 }
 
 impl<'a> From<&'a RequestId> for JsonId {
