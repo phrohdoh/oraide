@@ -1,0 +1,10 @@
+{
+    "id": 1,
+    "method": "initialize",
+    "params": {
+        "processId": null,
+        "capabilities": {
+            "hover": {}
+        }
+    }
+}
