@@ -52,7 +52,7 @@ macro_rules! define_dispatch_request_enum {
         )*
 
         impl DispatchRequest {
-            fn handle<O: Output>(self, out: &O) {
+            fn handle<O: Output>(self, ctx: InitContext, out: &O) {
                 match self {
                 $(
                     DispatchRequest::$req_type(req) => {
@@ -68,7 +68,7 @@ macro_rules! define_dispatch_request_enum {
                             if received.elapsed() >= timeout {
                                 $req_type::fallback_response()
                             } else {
-                                $req_type::handle(params)
+                                $req_type::handle(ctx, params)
                             }
                         }, WorkDescription($req_type::METHOD));
 
@@ -106,7 +106,7 @@ impl Dispatcher {
             .name("dispatch-worker".into())
             .spawn(move || {
                 while let Ok((req, ctx, token)) = rx.recv() {
-                    req.handle(&out);
+                    req.handle(ctx, &out);
                     drop(token);
                 }
             })
@@ -141,5 +141,5 @@ pub trait RequestAction: LspRequest {
     fn fallback_response() -> Result<Self::Response, ResponseError>;
 
     /// Request processing logic
-    fn handle(params: Self::Params) -> Result<Self::Response, ResponseError>;
+    fn handle(ctx: InitContext, params: Self::Params) -> Result<Self::Response, ResponseError>;
 }

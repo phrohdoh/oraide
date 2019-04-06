@@ -73,6 +73,10 @@ impl InitContext {
     pub fn add_job(&self, job: ConcurrentJob) {
         self.jobs.lock().unwrap().add(job);
     }
+
+    pub fn wait_for_concurrent_jobs(&self) {
+        self.jobs.lock().unwrap().wait_for_all();
+    }
 }
 
 /// Persistent context shared across all requests and notifications before the

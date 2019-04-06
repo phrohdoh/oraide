@@ -127,6 +127,13 @@ impl<O: Output> LangServerService<O> {
         ServerStateChange::Continue
     }
 
+    fn wait_for_concurrent_jobs(&mut self) {
+        match &self.ctx {
+            Context::Init(ctx) => ctx.wait_for_concurrent_jobs(),
+            _ => {},
+        }
+    }
+
     fn dispatch_message(&mut self, msg: &RawMessage) -> Result<(), jsonrpc::Error> {
         macro_rules! action {
             (
@@ -139,17 +146,27 @@ impl<O: Output> LangServerService<O> {
                         <$blocking_request as LspRequest>::METHOD => {
                             let req: Request<$blocking_request> = msg.parse_as_request()?;
 
-                            // TODO: Wait for concurrent jobs
-                            // https://github.com/rust-lang/rls/blob/609829a2d4477a20438bed00e3846098be898fdd/rls/src/server/mod.rs#L234-L236
+                            // Block until all non-blocking requests have been
+                            // handled ensuring ordering.
+                            self.wait_for_concurrent_jobs();
 
                             let req_id = req.id.clone();
-                            match req.blocking_dispatch(&self.output) {
-                                Ok(resp) => resp.send_success(req_id, &self.output),
-                                _ => unimplemented!(), // TODO
-                            }
 
-                            // TODO
-                            unimplemented!("Blocking LspRequest `{}`", stringify!($blocking_request))
+                            match req.blocking_dispatch(&mut self.ctx, &self.output) {
+                                Ok(resp) => resp.send(req_id, &self.output),
+                                Err(ResponseError::Empty) => {
+                                    log::error!("Error handling `{}`", $method);
+                                    self.output.send_failure_message(
+                                        req_id,
+                                        ErrorCode::InternalError,
+                                        "An unknown error occurred",
+                                    );
+                                },
+                                Err(ResponseError::Message(code, msg)) => {
+                                    log::error!("Error handling `{}`: {}", $method, msg);
+                                    self.output.send_failure_message(req_id, code, msg);
+                                },
+                            }
                         },
                     )*
 
@@ -173,12 +190,13 @@ impl<O: Output> LangServerService<O> {
 
         action!(
             msg.method;
-            blocking_requests: ;
+            blocking_requests:
+                request::Initialize;
             requests:
                 request::HoverRequest;
         );
 
-        unimplemented!()
+        Ok(())
     }
 }
 
@@ -207,6 +225,7 @@ impl MsgReader for StdinMsgReader {
 }
 
 fn read_message(input: &mut impl BufRead) -> Result<String, io::Error> {
+    log::warn!("Reading message...");
     let mut content_length = None;
 
     // Read the header section
@@ -217,7 +236,7 @@ fn read_message(input: &mut impl BufRead) -> Result<String, io::Error> {
         if buf.is_empty() {
             return Err(io::Error::new(
                 io::ErrorKind::UnexpectedEof,
-                "EOF encountered in the middle of reading LSP headers",
+                "Unexpected EOF encountered in the middle of LSP headers",
             ));
         }
 
@@ -236,7 +255,7 @@ fn read_message(input: &mut impl BufRead) -> Result<String, io::Error> {
 
         let hdr_name = res[0].trim().to_lowercase();
         let hdr_value = res[1].trim();
-        log::debug!("Header `{}` = `{}`", hdr_name, hdr_value);
+        log::warn!("Header `{}` = `{}`", hdr_name, hdr_value);
 
         match hdr_name.as_ref() {
             "content-length" => {
@@ -358,6 +377,14 @@ impl<R: serde::Serialize + fmt::Debug> Response for R {
     }
 }
 
+/// The lack of a response to a request;
+#[derive(Debug)]
+pub struct NoResponse;
+
+impl Response for NoResponse {
+    fn send<O: Output>(self, _id: RequestId, _out: &O) {}
+}
+
 /// Wrapper for a response error
 #[derive(Debug)]
 pub enum ResponseError {
@@ -372,12 +399,23 @@ pub enum ResponseError {
 pub trait BlockingRequestAction: LspRequest {
     type Response: Response + fmt::Debug;
 
-    fn handle<O: Output>(id: RequestId, params: Self::Params, output: O) -> Result<Self::Response, ResponseError>;
+    fn handle<O: Output>(
+        id: RequestId,
+        params: Self::Params,
+        // We use `Context`, instead of `InitContext`, here because of the init request
+        ctx: &mut Context,
+        output: O,
+    ) -> Result<Self::Response, ResponseError>;
 }
 
 impl<A: BlockingRequestAction> Request<A> {
-    pub fn blocking_dispatch<O: Output>(self, output: &O) -> Result<A::Response, ResponseError> {
-        A::handle(self.id, self.params, output.clone())
+    pub fn blocking_dispatch<O: Output>(
+        self,
+        // We use `Context`, instead of `InitContext`, here because of the init request
+        ctx: &mut Context,
+        output: &O,
+    ) -> Result<A::Response, ResponseError> {
+        A::handle(self.id, self.params, ctx, output.clone())
     }
 }
 
@@ -394,5 +432,12 @@ impl Output for StdoutOutput {
 
     fn gen_unique_id(&self) -> RequestId {
         RequestId::Num(self.next_id.fetch_add(1, Ordering::SeqCst))
+    }
+}
+
+pub fn capabilities(_ctx: &Context) -> lsp_types::ServerCapabilities {
+    lsp_types::ServerCapabilities {
+        hover_provider: true.into(),
+        ..Default::default()
     }
 }
