@@ -22,6 +22,10 @@
 json_file_path="$1"
 json_str="$(cat $json_file_path)"
 
+# - optional: minify the json via `jq`
+command -v jq >/dev/null 2>&1 && \
+    json_str="$(jq -c '.' <<< "$json_str")"
+
 # - calc byte len of json str
 json_str_byte_len=${#json_str}
 
