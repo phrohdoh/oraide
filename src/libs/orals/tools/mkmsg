@@ -11,6 +11,13 @@
 # 2) Invoke `mkmsg` (this script) from the `orals` directory:
 # $ ./tools/mkmsg test_messages/hover.json > ORALS
 
+### MAINTAINER TODOs ###
+#
+# - ingest json from stdin (user must `cat` if that's what they want)
+#   which will let us use `jq`
+#
+###
+
 # - read json file (file path given as 1st cli arg)
 json_file_path="$1"
 json_str="$(cat $json_file_path)"
