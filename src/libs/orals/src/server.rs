@@ -1,5 +1,5 @@
-/// The `types` module contains types that are specific to
-/// our LSP implementation.
+//! The `server` module contains the types and implementations that make up our
+//! LSP implementation.
 
 use std::{
     fmt,
@@ -30,11 +30,11 @@ use jsonrpc_core::{
     Id as JsonId,
     response,
     version,
+    ErrorCode,
 };
 
 use crate::{
     lsp::{
-        // Response, // TODO
         Request,
         RequestId,
         RawMessage,
@@ -42,7 +42,12 @@ use crate::{
     dispatch::{
         Dispatcher,
     },
+    context::{
+        Context,
+    },
 };
+
+const NOT_INITIALIZED_CODE: ErrorCode = ErrorCode::ServerError(-32002);
 
 /// Indicates how the server should proceed
 #[derive(Eq, PartialEq, Debug, Clone, Copy)]
@@ -54,6 +59,7 @@ pub enum ServerStateChange {
 pub struct LangServerService<O: Output> {
     reader: Box<dyn MsgReader + Send + Sync>,
     output: O,
+    ctx: Context,
     dispatcher: Dispatcher,
 }
 
@@ -68,6 +74,7 @@ impl<O: Output> LangServerService<O> {
         Self {
             reader,
             output,
+            ctx: Context::new(),
             dispatcher,
         }
     }
@@ -150,13 +157,16 @@ impl<O: Output> LangServerService<O> {
                         <$request as LspRequest>::METHOD => {
                             let req: Request<$request> = msg.parse_as_request()?;
 
-                            // TODO: Check if we've been `init`'d yet
-                            // https://github.com/rust-lang/rls/blob/17a439440e6b00b1f014a49c6cf47752ecae5bb7/rls/src/server/mod.rs#L260
-                            self.dispatcher.dispatch(req);
+                            if let Ok(ctx) = self.ctx.inited() {
+                                self.dispatcher.dispatch(req, ctx);
+                            } else {
+                                log::warn!("Server has not yet received an `initialize` request, cannot handle `{}`", $method);
+                                self.output.send_failure_message(req.id, NOT_INITIALIZED_CODE, "not yet received `initialize` request".to_owned());
+                            }
                         },
                     )*
 
-                    _ => unimplemented!("method `{}`", $method.as_str()),
+                    _ => log::debug!("method `{}` not handled", $method),
                 }
             }
         }

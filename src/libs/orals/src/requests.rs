@@ -6,7 +6,7 @@ use lsp_types::request::{
 
 use crate::{
     dispatch::RequestAction,
-    types::{
+    server::{
         ResponseError,
     },
 };

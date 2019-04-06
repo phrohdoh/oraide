@@ -1,11 +1,12 @@
-mod types;
+mod server;
 mod lsp;
 mod work_pool;
 mod dispatch;
 mod requests;
 mod concurrency;
+mod context;
 
-pub use types::{
+pub use server::{
     MsgReader,
     StdinMsgReader,
     StdoutOutput,

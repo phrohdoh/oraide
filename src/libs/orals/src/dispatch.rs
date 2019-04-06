@@ -13,7 +13,7 @@ use lsp_types::request::Request as LspRequest;
 
 use crate::{
     lsp::Request,
-    types::{
+    server::{
         Output,
         Response as ServerResponse,
         ResponseError,
@@ -25,6 +25,9 @@ use crate::{
     concurrency::{
         ConcurrentJob,
         JobToken,
+    },
+    context::{
+        InitContext,
     },
 };
 
@@ -91,20 +94,20 @@ define_dispatch_request_enum!(
 /// Requests dispatched this way are automatically timed out and avoid
 /// processing if they have already timed out before starting.
 pub(crate) struct Dispatcher {
-    sender: mpsc::Sender<(DispatchRequest, JobToken)>,
+    sender: mpsc::Sender<(DispatchRequest, InitContext, JobToken)>,
 }
 
 impl Dispatcher {
     /// Create a new `Dispatcher` starting a new thread and channel
     pub(crate) fn new<O: Output>(out: O) -> Self {
-        let (sender, rx) = mpsc::channel::<(DispatchRequest, JobToken)>();
+        let (sender, rx) = mpsc::channel::<(DispatchRequest, InitContext, JobToken)>();
 
         thread::Builder::new()
             .name("dispatch-worker".into())
             .spawn(move || {
-                while let Ok((req, tok)) = rx.recv() {
+                while let Ok((req, ctx, token)) = rx.recv() {
                     req.handle(&out);
-                    drop(tok);
+                    drop(token);
                 }
             })
             .unwrap();
@@ -112,12 +115,11 @@ impl Dispatcher {
         Self { sender }
     }
 
-    pub(crate) fn dispatch<R: Into<DispatchRequest>>(&mut self, req: R) {
-        let (_job, tok) = ConcurrentJob::new();
-        // TODO: `ctx.add_job(job)`
-        // https://github.com/rust-lang/rls/blob/4834d4fa7afcc265e1f5e09b7c9d59178c6b230a/rls/src/server/dispatch.rs#L138
+    pub(crate) fn dispatch<R: Into<DispatchRequest>>(&mut self, req: R, ctx: InitContext) {
+        let (job, token) = ConcurrentJob::new();
+        ctx.add_job(job);
 
-        if let Err(e) = self.sender.send((req.into(), tok)) {
+        if let Err(e) = self.sender.send((req.into(), ctx, token)) {
             log::error!("Failed to dispatch request: {:?}", e);
         }
     }
