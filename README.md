@@ -18,6 +18,8 @@ Taryn (a.k.a. Phrohdoh taryn@phrohdoh.com)
 
 **SDK ([link](https://github.com/OpenRA/OpenRAModSDK/))**: The official template for OpenRA-based games that comes bundled with utilitiy scripts
 
+**LSP ([link](https://microsoft.github.io/language-server-protocol/specification))**: The _Language Server Protocol_ spearheaded by Microsoft
+
 ## General project structure
 
 The `oraide` project is comprised of multiple components (some of which have dependencies on others).
@@ -26,3 +28,4 @@ The `oraide` project is comprised of multiple components (some of which have dep
 |-|-|
 | [oraml](./src/libs/oraml/README.md) | A library that converts text to MiniYaml trees |
 | [oraws](./src/libs/oraws/README.md) | A library that allows programmatic management of SDK-based projects |
+| [orals](./src/libs/orals/README.md) | A library that implements an LSP server |
