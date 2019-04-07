@@ -270,10 +270,13 @@ fn read_message(input: &mut impl BufRead) -> Result<String, io::Error> {
                 );
             },
             "content-type" => {
-                if hdr_value != "utf8" {
+                // Previous versions of the LSP used 'utf8' which isn't a
+                // valid encoding constant but we support 'utf8' for backwards
+                // compatibility.
+                if hdr_value != "utf8" && hdr_value != "utf-8" {
                     return Err(io::Error::new(
                         io::ErrorKind::InvalidData,
-                        format!("Content type `{}` is invalid (only `utf8` is supported)", hdr_value),
+                        format!("Content type `{}` is invalid (only `utf-8` is supported)", hdr_value),
                     ));
                 }
             },
