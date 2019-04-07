@@ -76,9 +76,42 @@ impl RequestAction for HoverRequest {
     fn handle(_ctx: InitContext, params: Self::Params) -> Result<Self::Response, ResponseError> {
         log::trace!("Got hover request in `{}` at `{}:{}`", params.text_document.uri, params.position.line, params.position.character);
         Ok(Self::Response {
-            contents: lsp_types::HoverContents::Scalar(
-                lsp_types::MarkedString::String("look at you hovering over symbols, go u".to_string())
-            ),
+            contents: lsp_types::HoverContents::Markup(lsp_types::MarkupContent {
+                kind: lsp_types::MarkupKind::Markdown,
+                value:
+"## [Buildable](https://github.com/OpenRA/OpenRA/wiki/Traits#buildable) > Prerequisites
+
+---
+
+### Description
+
+The prerequisite names that must be available before this can be built.
+
+This can be prefixed with `!` to invert the prerequisite (disabling production if the prerequisite is available) and/or `~` to hide the actor from the production palette if the prerequisite is not available.
+
+Prerequisites are granted by actors with the [`ProvidesPrerequisite`](https://github.com/OpenRA/OpenRA/wiki/Traits#providesprerequisite) trait.
+
+---
+
+### Type
+
+Comma-delimited strings
+
+---
+
+### Example
+
+```
+MyActorType:
+    Buildable:
+        Prerequisites: foo, !bar, ~baz, ~!qux
+```".into(),
+            }),
+//             contents: lsp_types::HoverContents::Scalar(
+//                 lsp_types::MarkedString::String(
+// "The prerequisite names that must be available before this can be built. This can be prefixed with ! to invert the prerequisite (disabling production if the prerequisite is available) and/or ~ to hide the actor from the production palette if the prerequisite is not available. Prerequisites are granted by actors with the ProvidesPrerequisite trait.".to_string()
+//                 ),
+//             ),
             range: None,
         })
     }
