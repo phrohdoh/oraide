@@ -27,7 +27,7 @@ impl Context {
         Context::Uninit(UninitContext::new())
     }
 
-    pub fn init<O: Output>(&mut self, out: &O) -> Result<(), ()> {
+    pub fn init<O: Output>(&mut self, _out: &O) -> Result<(), ()> {
         let ctx = match *self {
             Context::Uninit(ref uninit) => {
                 InitContext::new(uninit.server_pid)

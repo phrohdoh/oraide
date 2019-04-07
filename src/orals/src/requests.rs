@@ -35,7 +35,7 @@ impl BlockingRequestAction for InitRequest {
 
     fn handle<O: Output>(
         id: RequestId,
-        params: Self::Params,
+        _params: Self::Params,
         ctx: &mut Context,
         output: O,
     ) -> Result<Self::Response, ResponseError> {

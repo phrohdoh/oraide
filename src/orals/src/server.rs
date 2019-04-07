@@ -8,9 +8,6 @@ use std::{
         BufRead,
         Write as _,
     },
-    path::{
-        PathBuf
-    },
     sync::{
         Arc,
         atomic::{
