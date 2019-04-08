@@ -29,3 +29,7 @@ The `oraide` project is comprised of multiple components (some of which have dep
 | [oraml](./src/oraml/README.md) | A library that converts text to MiniYaml trees |
 | [oraws](./src/oraws/README.md) | A library that allows programmatic management of SDK-based projects |
 | [orals](./src/orals/README.md) | A library that implements an LSP server |
+
+## Architecture
+
+Read [./docs/dev/architecture.md](./docs/dev/architecture.md) for an overview of the _OpenRA IDE_ project architecture (this does *not* cover LSP clients).
