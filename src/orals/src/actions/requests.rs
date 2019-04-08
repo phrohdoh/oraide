@@ -3,6 +3,7 @@
 use lsp_types::request::{
     Initialize as InitRequest,
     HoverRequest,
+    Shutdown as ShutdownRequest,
 };
 
 use jsonrpc_core::{
@@ -21,14 +22,30 @@ use crate::{
         InitContext,
     },
     server::{
-        Response as _,
         self,
+        Response as _,
+        BlockingRequestAction,
         Output,
+        Ack,
         NoResponse,
         ResponseError,
-        BlockingRequestAction,
     },
 };
+
+impl BlockingRequestAction for ShutdownRequest {
+    type Response = Ack;
+
+    fn handle<O: Output>(_: RequestId, _: Self::Params, ctx: &mut Context, _: O) -> Result<Self::Response, ResponseError> {
+        if ctx.inited().is_ok() {
+            Ok(Ack)
+        } else {
+            Err(ResponseError::Message(
+                server::NOT_INITIALIZED_CODE,
+                "not yet received `initialize` request".to_owned(),
+            ))
+        }
+    }
+}
 
 impl BlockingRequestAction for InitRequest {
     type Response = NoResponse;

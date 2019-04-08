@@ -52,7 +52,7 @@ use crate::{
     },
 };
 
-const NOT_INITIALIZED_CODE: ErrorCode = ErrorCode::ServerError(-32002);
+pub(crate) const NOT_INITIALIZED_CODE: ErrorCode = ErrorCode::ServerError(-32002);
 
 /// Indicates how the server should proceed
 #[derive(Eq, PartialEq, Debug, Clone, Copy)]
@@ -393,6 +393,10 @@ impl StdoutOutput {
         }
     }
 }
+
+/// A response that just acknowledges receipt of its request.
+#[derive(Debug, serde::Serialize)]
+pub struct Ack;
 
 /// A response to some request
 pub trait Response {
