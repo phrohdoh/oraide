@@ -17,9 +17,15 @@ use std::{
     },
 };
 
-use lsp_types::request::{
-    self,
-    Request as LspRequest,
+use lsp_types::{
+    request::{
+        self as lsp_request,
+        Request as LspRequest,
+    },
+    notification::{
+        self as lsp_notification,
+        Notification as LspNotification,
+    }
 };
 
 use jsonrpc_core::{
@@ -33,6 +39,7 @@ use jsonrpc_core::{
 use crate::{
     lsp::{
         Request,
+        Notification,
         RequestId,
         RawMessage,
     },
@@ -41,6 +48,7 @@ use crate::{
     },
     context::{
         Context,
+        InitContext,
     },
 };
 
@@ -141,6 +149,24 @@ impl<O: Output> LangServerService<O> {
             ) => {
                 match $method.as_str() {
                     $(
+                        <$notif as LspNotification>::METHOD => {
+                            let notif: Notification<$notif> = msg.parse_as_notification()?;
+                            if let Ok(mut ctx) = self.ctx.inited() {
+                                if notif.dispatch(&mut ctx, self.output.clone()).is_err() {
+                                    log::debug!("Error handling notification: {:?}", msg);
+                                }
+                            } else {
+                                log::warn!("Server has not yet received an `initialize` request, cannot handle `{}`", $method);
+                                // NOTE: We are deliberately _not_ sending a
+                                // failure message because notifications
+                                // are not requests, meaning notifications
+                                // should not be responded to, they are
+                                // one-way messages.
+                            }
+                        },
+                    )*
+
+                    $(
                         <$blocking_request as LspRequest>::METHOD => {
                             let req: Request<$blocking_request> = msg.parse_as_request()?;
 
@@ -188,11 +214,12 @@ impl<O: Output> LangServerService<O> {
 
         action!(
             msg.method;
-            notifications: ;
+            notifications:
+                lsp_notification::Initialized;
             blocking_requests:
-                request::Initialize;
+                lsp_request::Initialize;
             requests:
-                request::HoverRequest;
+                lsp_request::HoverRequest;
         );
 
         Ok(())
@@ -418,6 +445,20 @@ impl<A: BlockingRequestAction> Request<A> {
         output: &O,
     ) -> Result<A::Response, ResponseError> {
         A::handle(self.id, self.params, ctx, output.clone())
+    }
+}
+
+/// An action taken in response to some notification from the client.
+/// Blocks the input channel whilst being handled.
+pub trait BlockingNotificationAction: LspNotification {
+    /// Handles this notification
+    fn handle<O: Output>(_: Self::Params, _: &mut InitContext, _: O) -> Result<(), ()>;
+}
+
+impl<A: BlockingNotificationAction> Notification<A> {
+    pub fn dispatch<O: Output>(self, ctx: &mut InitContext, out: O) -> Result<(), ()> {
+        A::handle(self.params, ctx, out)?;
+        Ok(())
     }
 }
 

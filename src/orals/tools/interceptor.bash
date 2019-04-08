@@ -1,0 +1,71 @@
+#!/usr/bin/env bash
+
+##### What / Why / How #####
+#
+# - What
+#
+# This script makes it simple to intercept, typically for viewing by a human,
+# the stdin and stdout of a process, such as a language server binary.
+#
+#
+# - Why
+#
+# Debugging language servers is, in my experience, not simple.
+# You may actually be debugging a server, or may be using an existing server
+# as reference while building your own, or may simply be doing research.
+#
+# Regardless, seeing *all* of the input and output of the server process
+# can be helpful.
+#
+# Perhaps the client is sending a malformed header section but the server is
+# unhelpful and just errors with a message like "invalid headers."  Of course
+# we can do better as software engineers but that's what we get sometimes.
+#
+# `interceptor.bash` to the rescue!  You can now see the *exact* message the
+# client sent and, hopefully, figure out *what* about the headers is invalid.
+#
+#
+# - How
+# 
+# The program `tee` is used to make a copy of the input and output, both of
+# which are written to files at paths that you can configure.
+#
+# These streams (input and output) are written as-is so, depending on your
+# data, you may need to do processing on the log files before you can easily
+# read the data.
+#
+# For most, if not all, Language Server Protocol implementors the data will be
+# plaintext, so you won't have to do any processing before viewing, yay!
+#
+#####
+
+### provided variables, don't modify this section ###
+this_script_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+### end provided variables
+
+### configuration
+
+# NOTE: This is specifically for https://doc.rust-lang.org/cargo/ projects
+#       Feel free to remove this (and later references to it) if it isn't
+#       useful for you
+# must be one of `debug` or `release`
+mode="debug"
+
+# the name of the executable to intercept I/O for
+exe_name="orals"
+
+# the path of the executable to intercept I/O for
+exe_path="${this_script_dir}/../../../target/${mode}/${exe_name}"
+
+# the file path to write process input to
+input_log_file_path="/tmp/${exe_name}.in.log"
+
+# the file path to write process output to
+output_log_file_path="/tmp/${exe_name}.out.log"
+
+### end configuration
+
+cat - \
+| tee "${input_log_file_path}" \
+| RUST_LOG=${exe_name}=trace "${exe_path}" $@ \
+| tee "${output_log_file_path}"

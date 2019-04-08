@@ -2,3 +2,4 @@
 //! processing notifications, watching files, etc.
 
 pub mod requests;
+pub mod notifications;

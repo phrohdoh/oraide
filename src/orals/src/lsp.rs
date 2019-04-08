@@ -9,7 +9,10 @@ use std::{
 
 use serde::de::Deserialize as _;
 
-use lsp_types::request::Request as LspRequest;
+use lsp_types::{
+    request::Request as LspRequest,
+    notification::Notification as LspNotification,
+};
 
 use jsonrpc_core::{
     self as jsonrpc,
@@ -68,6 +71,23 @@ impl<A: LspRequest> Request<A> {
     }
 }
 
+/// A notification that gets sent to the server as JSON
+#[derive(Debug, PartialEq)]
+pub struct Notification<A: LspNotification> {
+    /// The extra, action-specific, parameters
+    pub params: A::Params,
+
+    /// The action responsible for this notification
+    pub _action: PhantomData<A>,
+}
+
+impl<A: LspNotification> Notification<A> {
+    /// Create a new `Notification` with the given `params`
+    pub fn new(params: A::Params) -> Notification<A> {
+        Self { params, _action: PhantomData }
+    }
+}
+
 #[derive(Debug, PartialEq)]
 pub struct RawMessage {
     pub method: String,
@@ -101,6 +121,19 @@ impl RawMessage {
             }),
             _ => Err(jsonrpc::Error::invalid_request()),
         }
+    }
+
+    pub fn parse_as_notification<'de, T>(&'de self) -> Result<Notification<T>, jsonrpc::Error>
+        where T: LspNotification,
+              <T as LspNotification>::Params: serde::Deserialize<'de>
+    {
+        let params = T::Params::deserialize(&self.params)
+            .map_err(|e| {
+                log::debug!("Error parsing as notification: {}", e);
+                jsonrpc::Error::invalid_params(format!("{}", e))
+            })?;
+
+        Ok(Notification { params, _action: PhantomData })
     }
 
     pub fn try_from_str(msg: &str) -> Result<Option<Self>, jsonrpc::Error> {
