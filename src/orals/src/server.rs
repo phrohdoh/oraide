@@ -135,6 +135,7 @@ impl<O: Output> LangServerService<O> {
         macro_rules! action {
             (
                 $method: expr;
+                notifications: $($notif: ty),*;
                 blocking_requests: $($blocking_request:ty),*;
                 requests: $($request: ty),*;
             ) => {
@@ -187,6 +188,7 @@ impl<O: Output> LangServerService<O> {
 
         action!(
             msg.method;
+            notifications: ;
             blocking_requests:
                 request::Initialize;
             requests:

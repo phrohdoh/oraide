@@ -2,7 +2,7 @@ mod server;
 mod lsp;
 mod work_pool;
 mod dispatch;
-mod requests;
+mod actions;
 mod concurrency;
 mod context;
 
