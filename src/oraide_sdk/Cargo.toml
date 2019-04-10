@@ -1,5 +1,5 @@
 [package]
-name = "oraws"
+name = "oraide_sdk"
 version = "0.0.1"
 authors = ["Taryn Hill <taryn@phrohdoh.com>"]
 edition = "2018"

@@ -1,6 +1,6 @@
 [workspace]
 members = [
     "src/oraide_miniyaml",
-    "src/oraws",
+    "src/oraide_sdk",
     "src/orals",
 ]

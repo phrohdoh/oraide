@@ -5,7 +5,7 @@ The _OpenRA IDE_ project is made up of multiple codebases, each potentially cont
 This particular codebase contains the "core" pieces of the _OpenRA IDE_ project:
 
 - `oraide_miniyaml`: lexing, parsing, and tree-building of MiniYaml documents
-- `oraws`: SDK-based workspace management
+- `oraide_sdk`: SDK-based project management
 - `orals`: an LSP server for use with LSP clients (such as the Visual Studio Code extension `oraide-vscode`)
 
 Each of these builds on top of the previous ones.
@@ -34,7 +34,7 @@ The entrypoint into the `lexer` module is the aptly named `Lexer` type which hol
 
 TODO
 
-## oraws
+## oraide_sdk
 
 TODO
 

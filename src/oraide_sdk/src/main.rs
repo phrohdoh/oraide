@@ -75,7 +75,7 @@ fn run() {
     let mut files = Files::new();
     let mut map_fpath_to_fid = HashMap::new();
 
-    let project = oraws::Project::new_from_abs_dir(root_dir_arg)
+    let project = oraide_sdk::Project::new_from_abs_dir(root_dir_arg)
         .expect("Failed to create Project from directory");
 
     for (game_id, shrd_game) in &project.games {
