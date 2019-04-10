@@ -4,7 +4,7 @@ The _OpenRA IDE_ project is made up of multiple codebases, each potentially cont
 
 This particular codebase contains the "core" pieces of the _OpenRA IDE_ project:
 
-- `oraml`: lexing, parsing, and AST-building of MiniYaml documents
+- `oraide_miniyaml`: lexing, parsing, and tree-building of MiniYaml documents
 - `oraws`: SDK-based workspace management
 - `orals`: an LSP server for use with LSP clients (such as the Visual Studio Code extension `oraide-vscode`)
 
@@ -24,11 +24,9 @@ Things to cover:
 - Symbol tables (this doesn't exist in the code yet)
     - What / Why / How
 
-## oraml
+## oraide_miniyaml
 
-> "OpenRA Markup Language" or "OpenRA MiniYaml Language" or \<whatever you want it to stand for\>
-
-This package converts a text document into an [AST](https://en.wikipedia.org/wiki/Abstract_syntax_tree) in stages.
+This package converts a text document into a tree of nodes.
 
 ### The `lexer` Module
 

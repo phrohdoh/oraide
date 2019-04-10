@@ -295,7 +295,7 @@ pub struct Tree<'file> {
 }
 
 impl<'file> Tree<'file> {
-    /// Create a new instace of an `oraml::Tree`
+    /// Create a new instace of an `oraide_miniyaml::Tree`
     pub fn new(node_ids: Vec<ArenaNodeId>, arena: Arena<'file>) -> Self {
         Self {
             node_ids,

@@ -95,7 +95,7 @@ where
     /// Build a tree (backed by an `indextree::Arena`) of nodes
     /// 
     /// # Returns
-    /// A `oraml::Tree` struct instance
+    /// A `oraide_miniyaml::Tree` struct instance
     pub fn build_tree(&mut self) -> Tree<'file> {
         let mut arena = Arena::new();
         let parentless_sentinel_node_id = arena.new_node(Node::empty());

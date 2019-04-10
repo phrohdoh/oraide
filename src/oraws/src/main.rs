@@ -11,7 +11,7 @@ use std::{
 
 use slog::Drain;
 
-use oraml::{
+use oraide_miniyaml::{
     Lexer,
     Parser,
     Arborist,

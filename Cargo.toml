@@ -1,6 +1,6 @@
 [workspace]
 members = [
-    "src/oraml",
+    "src/oraide_miniyaml",
     "src/oraws",
     "src/orals",
 ]

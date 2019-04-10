@@ -21,7 +21,7 @@ use language_reporting::{
     },
 };
 
-use oraml::{
+use oraide_miniyaml::{
     Lexer,
     Parser,
     Arborist,
