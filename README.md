@@ -28,7 +28,7 @@ The `oraide` project is comprised of multiple components (some of which have dep
 |-|-|
 | [oraide_miniyaml](./src/oraide_miniyaml/README.md) | A library that converts MiniYaml text to trees |
 | [oraide_sdk](./src/oraide_sdk/README.md) | A library that allows programmatic management of SDK-based projects |
-| [orals](./src/orals/README.md) | A library that implements an LSP server |
+| [oraide_language_server](./src/oraide_language_server/README.md) | A library that implements an LSP server |
 
 ## Architecture
 

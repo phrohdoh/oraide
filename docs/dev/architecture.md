@@ -6,7 +6,7 @@ This particular codebase contains the "core" pieces of the _OpenRA IDE_ project:
 
 - `oraide_miniyaml`: lexing, parsing, and tree-building of MiniYaml documents
 - `oraide_sdk`: SDK-based project management
-- `orals`: an LSP server for use with LSP clients (such as the Visual Studio Code extension `oraide-vscode`)
+- `oraide_language_server`: an LSP server for use with LSP clients (such as the Visual Studio Code extension `oraide-vscode`)
 
 Each of these builds on top of the previous ones.
 
@@ -38,6 +38,6 @@ TODO
 
 TODO
 
-## orals
+## oraide_language_server
 
 TODO

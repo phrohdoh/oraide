@@ -2,5 +2,5 @@
 members = [
     "src/oraide_miniyaml",
     "src/oraide_sdk",
-    "src/orals",
+    "src/oraide_language_server",
 ]

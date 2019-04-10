@@ -4,5 +4,5 @@ fn main() {
 }
 
 fn main_inner() -> i32 {
-    orals::run_server()
+    oraide_language_server::run_server()
 }
