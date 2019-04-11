@@ -95,7 +95,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     // === arborist
 
     let mut arborist = Arborist::new(nodes.into_iter());
-    let _arena = arborist.build_tree();
+    let tree = arborist.build_tree();
 
     let arborist_diags = arborist.take_diagnostics();
     if !arborist_diags.is_empty() {
@@ -105,6 +105,12 @@ fn main() -> Result<(), Box<dyn Error>> {
             arborist_diags
         );
     }
+
+    let top_level_slices = tree.top_level_nodes()
+        .filter_map(|(_nid, shrd_node)| shrd_node.key_slice(&files))
+        .collect::<Vec<_>>();
+
+    println!("{:?}", top_level_slices);
 
     Ok(())
 }

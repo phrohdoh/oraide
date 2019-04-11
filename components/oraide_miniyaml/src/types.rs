@@ -196,6 +196,14 @@ impl<'file> Node<'file> {
         && self.value_tokens.is_empty()
     }
 
+    pub fn has_key(&self) -> bool {
+        !self.key_tokens.is_empty()
+    }
+
+    pub fn is_top_level(&self) -> bool {
+        self.indentation_level() == 0
+    }
+
     pub fn indentation_level(&self) -> usize {
         self.indentation_token.as_ref().map_or(0, |token| token.slice.len())
     }
@@ -301,6 +309,13 @@ impl<'file> Tree<'file> {
             node_ids,
             arena,
         }
+    }
+
+    /// Get a tuple of `(arena_node_id, node)` for all top-level nodes, regardless of comment-only, whitespace-only, key-only, etc.
+    pub fn top_level_nodes(&self) -> impl Iterator<Item=(ArenaNodeId, &Node<'file>)> {
+        self.node_ids.iter().skip(1) // skip the sentinel
+            .filter_map(move |nid| self.arena.get(*nid).map(|an| (*nid, &an.data)))
+            .filter(|(_nid, shrd_node)| shrd_node.is_top_level())
     }
 }
 
