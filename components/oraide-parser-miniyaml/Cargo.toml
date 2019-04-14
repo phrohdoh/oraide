@@ -6,4 +6,5 @@ authors = ["Taryn Hill <taryn@phrohdoh.com>"]
 edition = "2018"
 
 [dependencies]
+oraide-span = { path = "../oraide-span" }
 salsa = "^0.12"
