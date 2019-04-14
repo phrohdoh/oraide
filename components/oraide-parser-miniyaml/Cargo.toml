@@ -10,3 +10,7 @@ oraide-span = { path = "../oraide-span" }
 salsa = "^0.12"
 itertools = "^0.8"
 log = "^0.4"
+
+[dev-dependencies]
+unindent = "^0.1"
+pretty_assertions = "^0.6"
