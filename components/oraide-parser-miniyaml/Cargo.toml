@@ -8,3 +8,5 @@ edition = "2018"
 [dependencies]
 oraide-span = { path = "../oraide-span" }
 salsa = "^0.12"
+itertools = "^0.8"
+log = "^0.4"
