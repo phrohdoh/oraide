@@ -1,5 +1,6 @@
 [workspace]
 members = [
+    "components/oraide-span",
     "components/oraide-miniyaml",
     "components/oraide-sdk",
     "components/oraide-language-server",

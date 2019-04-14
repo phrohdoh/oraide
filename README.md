@@ -26,6 +26,7 @@ The `oraide` project is comprised of multiple components (some of which have dep
 
 | component | description |
 |-|-|
+| [oraide-span](./components/oraide-span/README.md) | A library that implements types for text &amp; file tracking |
 | [oraide-miniyaml](./components/oraide-miniyaml/README.md) | A library that converts MiniYaml text to trees |
 | [oraide-sdk](./components/oraide-sdk/README.md) | A library that allows programmatic management of SDK-based projects |
 | [oraide-language-server](./components/oraide-language-server/README.md) | A library that implements an LSP server |
