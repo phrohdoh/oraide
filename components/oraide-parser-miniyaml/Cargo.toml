@@ -1,0 +1,9 @@
+[package]
+name = "oraide-parser-miniyaml"
+version = "0.0.1"
+description = "Implements textual MiniYaml parsing via incremental recomputation powered by the 'salsa' project"
+authors = ["Taryn Hill <taryn@phrohdoh.com>"]
+edition = "2018"
+
+[dependencies]
+salsa = "^0.12"
