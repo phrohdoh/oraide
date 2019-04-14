@@ -4,9 +4,9 @@ The _OpenRA IDE_ project is made up of multiple codebases, each potentially cont
 
 This particular codebase contains the "core" pieces of the _OpenRA IDE_ project:
 
-- `oraide_miniyaml`: lexing, parsing, and tree-building of MiniYaml documents
-- `oraide_sdk`: SDK-based project management
-- `oraide_language_server`: an LSP server for use with LSP clients (such as the Visual Studio Code extension `oraide-vscode`)
+- `oraide-miniyaml`: lexing, parsing, and tree-building of MiniYaml documents
+- `oraide-sdk`: SDK-based project management
+- `oraide-language-server`: an LSP server for use with LSP clients (such as the Visual Studio Code extension `oraide-vscode`)
 
 Each of these builds on top of the previous ones.
 
@@ -24,7 +24,7 @@ Things to cover:
 - Symbol tables (this doesn't exist in the code yet)
     - What / Why / How
 
-## oraide_miniyaml
+## oraide-miniyaml
 
 This package converts a text document into a tree of nodes.
 
@@ -34,10 +34,10 @@ The entrypoint into the `lexer` module is the aptly named `Lexer` type which hol
 
 TODO
 
-## oraide_sdk
+## oraide-sdk
 
 TODO
 
-## oraide_language_server
+## oraide-language-server
 
 TODO

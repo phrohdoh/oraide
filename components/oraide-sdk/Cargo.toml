@@ -1,5 +1,5 @@
 [package]
-name = "oraide_sdk"
+name = "oraide-sdk"
 version = "0.0.1"
 authors = ["Taryn Hill <taryn@phrohdoh.com>"]
 edition = "2018"
@@ -14,7 +14,7 @@ slog-scope = "4.1.1"
 slog-async = "2.3.0"
 log = "0.4.6"
 
-oraide_miniyaml = { path = "../oraide_miniyaml" }
+oraide-miniyaml = { path = "../oraide-miniyaml" }
 itertools = "0.8.0"
 
 [build-dependencies]

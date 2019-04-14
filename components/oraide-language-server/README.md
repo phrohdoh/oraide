@@ -1,8 +1,8 @@
-# `oraide_language_server`
+# `oraide-language-server`
 
 A library, written in [Rust](https://www.rust-lang.org/), that implements the [language server protocol](https://microsoft.github.io/language-server-protocol/specification).
 
-There is also an executable target (named `oraide_language_server`) that clients will execute.
+There is also an executable target (named `oraide-language-server`) that clients will execute.
 
 ## Development & Testing Tools
 

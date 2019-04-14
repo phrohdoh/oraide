@@ -1,6 +1,6 @@
 [workspace]
 members = [
-    "components/oraide_miniyaml",
-    "components/oraide_sdk",
-    "components/oraide_language_server",
+    "components/oraide-miniyaml",
+    "components/oraide-sdk",
+    "components/oraide-language-server",
 ]
