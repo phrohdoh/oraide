@@ -22,3 +22,7 @@ mod treeizer;
 
 pub use tokenizer::Tokenizer;
 pub use nodeizer::Nodeizer;
+pub use treeizer::{
+    IndentLevelDelta,
+    Treeizer,
+};

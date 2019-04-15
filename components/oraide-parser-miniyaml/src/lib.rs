@@ -3,6 +3,12 @@
 //! Convert textual MiniYaml documents into MiniYaml trees
 //!
 
+use indextree::{
+    NodeId as ArenaNodeId,
+};
+
+pub type Arena = indextree::Arena<Node>;
+
 use oraide_span::{
     FileSpan,
 };
@@ -12,9 +18,11 @@ mod parser;
 pub use parser::{
     Tokenizer,
     Nodeizer,
+    Treeizer,
+    IndentLevelDelta,
 };
 
-/// Used to indicate which type of `Token` this is
+/// Used to indicate which type of [`Token`] this is
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum TokenKind {
     // something went wrong and we aren't certain which
@@ -48,7 +56,7 @@ pub enum TokenKind {
     EndOfLine,
 }
 
-/// A `Token` is the smallest unit of meaning in text parsing.
+/// A [`Token`] is the smallest unit of meaning in text parsing.
 ///
 /// # Example
 ///
@@ -72,6 +80,8 @@ pub enum TokenKind {
 /// assert_eq!(first_token.kind, TokenKind::Identifier);
 /// assert_eq!(first_token.span, FileSpan::new(file_id, 0, 4));
 /// ```
+///
+/// [`Token`]: struct.Token.html
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Token {
     /// The kind of token located at `span`
@@ -118,12 +128,17 @@ impl Token {
 }
 
 pub trait TokenCollectionExts {
-    /// Get a slice of `Token`s that starts *after* leading `TokenKind::Whitespace`s
+    /// Get a slice of [`Token`]s that starts *after* leading [`TokenKind::Whitespace`]s
+    ///
+    /// [`Token`]: struct.Token.html
+    /// [`TokenKind::Whitespace`]: enum.TokenKind.html#variant.Whitespace
     fn skip_leading_whitespace(&self) -> &[Token];
 
-    /// Get a span covering the entire collection of `Token`s
+    /// Get a span covering the entire collection of [`Token`]s
     ///
     /// Typically this is used to get the span of a single node (which, in practice, is an entire line)
+    ///
+    /// [`Token`]: struct.Token.html
     fn span(&self) -> Option<FileSpan>;
 }
 
@@ -152,12 +167,17 @@ impl TokenCollectionExts for [Token] {
     }
 }
 
-/// A `Node` is, in the context of textual MiniYaml, a structured collection
-/// of `Token`s in a single line
+/// A [`Node`] is, in the context of textual MiniYaml, a structured collection
+/// of [`Token`]s in a single line
+///
+/// [`Token`]: struct.Token.html
+/// [`Node`]: struct.Node.html
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Node {
     /// Token that makes up the whitespace before any other tokens,
-    /// if any (should always be a `Whitespace` kind)
+    /// if any (should always be a [`Whitespace`] kind)
+    ///
+    /// [`Whitespace`]: enum.TokenKind.html#variant.Whitespace
     pub indentation_token: Option<Token>,
 
     /// Tokens that make up the *key* portion, if any
@@ -287,5 +307,28 @@ impl Node {
             (Some(source), Some(start), Some(end)) => FileSpan::new(source, start, end),
             _ => return None,
         })
+    }
+}
+
+/// A [`Tree`] groups an [`indextree::Arena`] with all of its [`indextree::NodeId`]s
+///
+/// [`Tree`]: struct.Tree.html
+/// [`indextree::Arena`]: ../indextree/struct.Arena.html
+#[derive(Debug, Clone)]
+pub struct Tree {
+    /// All IDs for nodes that exist in `arena` with the first item always
+    /// being the sentinel for parent-less nodes
+    pub node_ids: Vec<ArenaNodeId>,
+
+    /// The `indextree::Arena` that contains `Node`s
+    pub arena: Arena,
+}
+
+impl Tree {
+    pub fn from(node_ids: Vec<ArenaNodeId>, arena: Arena) -> Self {
+        Self {
+            node_ids,
+            arena,
+        }
     }
 }

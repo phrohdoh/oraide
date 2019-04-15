@@ -1,14 +1,15 @@
 //! # `tokenizer`
 //!
-//! Demarcate text into a collection of `Token`s.
+//! Demarcate text into a collection of [`Token`]s.
 //!
-//! See [Wikipedia][wikipedia] for more information.
+//! See [Wikipedia] for more information.
 //!
 //! ---
 //!
-//! The entrypoint to this module is the `Tokenizer` struct.
+//! The entrypoint to this module is the [`Tokenizer`] struct.
 //!
-//! [wikipedia]: https://en.wikipedia.org/wiki/Lexical_analysis#Tokenization
+//! [Wikipedia]: https://en.wikipedia.org/wiki/Lexical_analysis#Tokenization
+//! [`Token`]: struct.Token.html
 //!
 
 use std::{
@@ -76,8 +77,8 @@ fn is_identifier_continue(ch: char) -> bool {
     }
 }
 
-/// Transform text into a collection of `Token`s for subsequent use
-/// by a `Nodeizer` instance
+/// Transform text into a collection of [`Token`]s for subsequent use
+/// by a [`Nodeizer`] instance
 ///
 /// # Lifetimes
 /// `'text`: the underlying text that is being tokenized
@@ -91,6 +92,9 @@ fn is_identifier_continue(ch: char) -> bool {
 /// let tokens: Vec<Token> = tokenizer.run();
 /// assert_eq!(tokens.len(), 5);
 /// ```
+///
+/// [`Token`]: struct.Token.html
+/// [`Nodeizer`]: struct.Nodeizer.html
 pub struct Tokenizer<'text> {
     /// The underlying text that is being tokenized
     text: &'text str,
@@ -112,7 +116,7 @@ pub struct Tokenizer<'text> {
 }
 
 impl<'text> Tokenizer<'text> {
-    /// Create a new `Tokenizer` from text and an associated `FileId`
+    /// Create a new [`Tokenizer`] from text and an associated [`FileId`]
     ///
     /// # Example
     ///
@@ -128,6 +132,9 @@ impl<'text> Tokenizer<'text> {
     /// // Quick sanity check
     /// assert_eq!(tokens.len(), 5);
     /// ```
+    ///
+    /// [`Tokenizer`]: struct.Tokenizer.html
+    /// [`FileId`]: struct.FileId.html
     pub fn new(file_id: FileId, text: &'text str) -> Tokenizer<'text> {
         let mut chars = text.chars();
         let peeked = chars.next();

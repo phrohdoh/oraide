@@ -15,10 +15,10 @@ use crate::{
     Node,
 };
 
-/// Transform a collection of `Token`s into a collection of `Node`s
+/// Transform a collection of [`Token`]s into a collection of [`Node`]s
 ///
 /// # Type Parameters
-/// `I`: An _iterable_ that yields `Token`s
+/// `I`: An _iterable_ that yields [`Token`]s
 ///
 /// # Example
 /// ```rust
