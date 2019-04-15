@@ -33,6 +33,9 @@ pub use nodeizer::{
 };
 
 pub use treeizer::{
+    Tree,
     Treeizer,
     IndentLevelDelta,
+    Arena,
+    ArenaNodeId,
 };

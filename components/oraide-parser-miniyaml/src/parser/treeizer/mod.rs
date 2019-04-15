@@ -7,18 +7,44 @@
 //! The entrypoint to this module is the `Treeizer` struct.
 //!
 
+pub use indextree::{
+    NodeId as ArenaNodeId,
+};
+
 use crate::{
     Node,
-    Tree,
-    Arena,
-    ArenaNodeId,
 };
+
+pub type Arena = indextree::Arena<Node>;
 
 // https://github.com/OpenRA/OpenRA/blob/30103da2db58b8fba09b45b6d9dfbb7049a2c449/OpenRA.Game/MiniYaml.cs#L93
 const SPACES_PER_INDENT_LEVEL: usize = 4;
 
 // Just to be consistent in the code (so we don't have `1`s scattered about).
 const TABS_PER_INDENT_LEVEL: usize = 1;
+
+/// A [`Tree`] groups an [`indextree::Arena`] with all of its [`indextree::NodeId`]s
+///
+/// [`Tree`]: struct.Tree.html
+/// [`indextree::Arena`]: ../indextree/struct.Arena.html
+#[derive(Debug, Clone)]
+pub struct Tree {
+    /// All IDs for nodes that exist in `arena` with the first item always
+    /// being the sentinel for parent-less nodes
+    pub node_ids: Vec<ArenaNodeId>,
+
+    /// The `indextree::Arena` that contains `Node`s
+    pub arena: Arena,
+}
+
+impl Tree {
+    pub fn from(node_ids: Vec<ArenaNodeId>, arena: Arena) -> Self {
+        Self {
+            node_ids,
+            arena,
+        }
+    }
+}
 
 /// Used to store/calculate indentation level delta between two *thing*s
 ///
