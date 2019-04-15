@@ -27,7 +27,10 @@ pub use tokenizer::{
     TokenCollectionExts,
 };
 
-pub use nodeizer::Nodeizer;
+pub use nodeizer::{
+    Node,
+    Nodeizer,
+};
 
 pub use treeizer::{
     Treeizer,
