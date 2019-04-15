@@ -20,9 +20,16 @@ mod tokenizer;
 mod nodeizer;
 mod treeizer;
 
-pub use tokenizer::Tokenizer;
+pub use tokenizer::{
+    Token,
+    TokenKind,
+    Tokenizer,
+    TokenCollectionExts,
+};
+
 pub use nodeizer::Nodeizer;
+
 pub use treeizer::{
-    IndentLevelDelta,
     Treeizer,
+    IndentLevelDelta,
 };
