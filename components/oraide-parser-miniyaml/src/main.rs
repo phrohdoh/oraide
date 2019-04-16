@@ -8,15 +8,11 @@ use std::{
     },
 };
 
-use oraide_span::{
-    FileId,
-};
-
 use oraide_parser_miniyaml::{
-    Tokenizer,
-    Nodeizer,
-    Treeizer,
     TokenCollectionExts as _,
+    Database,
+    ParserCtx as _,
+    ParserCtxExt as _,
 };
 
 fn main() -> Result<(), String> {
@@ -41,16 +37,9 @@ fn run(args: &mut CliArgs) -> Result<(), String> {
         s
     };
 
-    let file_id = FileId(0);
-
-    let mut tokenizer = Tokenizer::new(file_id, &file_contents);
-    let tokens = tokenizer.run();
-
-    let mut nodeizer = Nodeizer::new(tokens.into_iter());
-    let nodes = nodeizer.run();
-
-    let mut treeizer = Treeizer::new(nodes.into_iter(), &file_contents);
-    let tree = treeizer.run();
+    let mut db = Database::default();
+    let file_id = db.add_file(file_path.clone(), file_contents.clone());
+    let tree = db.file_tree(file_id);
 
     let top_level_nodes = tree.node_ids.iter().skip(1) // skip the sentinel
         .filter_map(|nid| tree.arena.get(*nid).map(|an| (*nid, &an.data)))
