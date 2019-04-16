@@ -27,7 +27,7 @@ const TABS_PER_INDENT_LEVEL: usize = 1;
 ///
 /// [`Tree`]: struct.Tree.html
 /// [`indextree::Arena`]: ../indextree/struct.Arena.html
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Tree {
     /// All IDs for nodes that exist in `arena` with the first item always
     /// being the sentinel for parent-less nodes
