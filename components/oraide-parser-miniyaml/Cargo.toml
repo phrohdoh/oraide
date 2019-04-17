@@ -10,7 +10,8 @@ oraide-span = { path = "../oraide-span" }
 salsa = "^0.12"
 itertools = "^0.8"
 log = "^0.4"
-indextree = "^3.1"
+# indextree = "^3.1" # use this once 38009cc6c896fdf827cfd7982402d8ee6ab702e0 is released on crates.io
+indextree = { git = "https://github.com/saschagrunert/indextree/", rev = "38009cc6c896fdf827cfd7982402d8ee6ab702e0", features = ["derive-eq"] }
 
 [dev-dependencies]
 unindent = "^0.1"
