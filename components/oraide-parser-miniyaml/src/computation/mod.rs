@@ -16,6 +16,7 @@
 
 use oraide_span::{
     FileId,
+    FileSpan,
 };
 
 use crate::{
@@ -91,6 +92,10 @@ pub trait ParserCtx: salsa::Database {
     /// - The file's definitions
     #[salsa::invoke(query_definitions::all_definitions)]
     fn all_definitions(&self) -> Vec<(FileId, Vec<Node>)>;
+
+    /// Compute the span of a definition with the given name in a particular file
+    #[salsa::invoke(query_definitions::file_definition_span)]
+    fn file_definition_span(&self, file_id: FileId, def_name: String) -> Option<FileSpan>;
 }
 
 pub trait ParserCtxExt: ParserCtx {

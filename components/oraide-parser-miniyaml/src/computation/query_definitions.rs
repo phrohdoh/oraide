@@ -1,5 +1,6 @@
 use oraide_span::{
     FileId,
+    FileSpan,
 };
 
 use crate::{
@@ -48,4 +49,23 @@ pub(crate) fn all_definitions(db: &impl ParserCtx) -> Vec<(FileId, Vec<Node>)> {
         .into_iter()
         .map(|file_id| (file_id, db.file_definitions(file_id)))
         .collect()
+}
+
+/// Find a definition with name `def_name` and return its span.
+pub(crate) fn file_definition_span(db: &impl ParserCtx, file_id: FileId, def_name: String) -> Option<FileSpan> {
+    let text = db.file_text(file_id);
+    let defs = db.file_definitions(file_id);
+
+    for def in defs {
+        let key_text = match def.key_text(&text) {
+            Some(text) => text,
+            _ => continue,
+        };
+
+        if key_text == &def_name {
+            return def.key_span();
+        }
+    }
+
+    None
 }
