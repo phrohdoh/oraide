@@ -35,7 +35,7 @@ pub fn main() {
     let cmd = match args.next() {
         Some(cmd) => cmd,
         _ => {
-            eprintln!("Please provide a command");
+            print_usage_instructions();
             return;
         },
     };
@@ -87,8 +87,15 @@ pub fn main() {
                 _ => eprintln!("Please provide a file path to lint"),
             }
         },
-        other => eprintln!("Unsupported command `{}`", other),
+        _ => print_usage_instructions(),
     }
+}
+
+fn print_usage_instructions() {
+    println!("Usage:");
+    println!("  ora parse <file-path>                         - print all definitions (top-level items) in a file");
+    println!("  ora find-defs <project-root-path> <item-name> - find all definitions with name <item-name> in <project-root-path>");
+  //println!("  ora lint <file-path>                          - unimplemented");
 }
 
 /// Read the contents of `file_path` and add it to `db`, creating and returning
