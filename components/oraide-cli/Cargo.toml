@@ -9,3 +9,4 @@ edition = "2018"
 oraide-span = { path = "../oraide-span" }
 oraide-parser-miniyaml = { path = "../oraide-parser-miniyaml" }
 inventory = "^0.1"
+walkdir = "2.2.7"

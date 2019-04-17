@@ -25,28 +25,11 @@ pub(crate) struct Parse {
 }
 
 impl Parse {
-    fn add_file(db: &mut Database, file_path: &Path) -> Result<FileId, String> {
-        let text = {
-            let mut file = File::open(file_path)
-                .map_err(|e| format!("Error opening `{}`: {}", file_path.display(), e))?;
-
-            let mut text = String::new();
-            file.read_to_string(&mut text)
-                .map_err(|e| format!("Error reading `{}`: {}", file_path.display(), e))?;
-
-            text
-        };
-
-        let file_id = db.add_file(file_path.to_string_lossy(), text);
-
-        Ok(file_id)
-    }
-
     pub(crate) fn new(file_paths: Vec<PathBuf>) -> Result<Self, String> {
         let mut db = Database::default();
 
         let file_ids = file_paths.iter()
-            .map(|path| Self::add_file(&mut db, path))
+            .map(|path| crate::add_file(&mut db, path))
             .collect::<Result<_, String>>()?;
 
         Ok(Self {
