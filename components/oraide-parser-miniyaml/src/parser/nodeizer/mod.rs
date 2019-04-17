@@ -85,6 +85,30 @@ impl Node {
         !self.key_tokens.is_empty()
     }
 
+    pub fn key_span(&self) -> Option<FileSpan> {
+        self.key_tokens.span()
+    }
+
+    /// Get the key-portion of a Node's text, if any exists
+    pub fn key_text<'text>(&self, text: &'text str) -> Option<&'text str> {
+        let span = match self.key_tokens.span() {
+            None => return None,
+            Some(s) => s,
+        };
+
+        let start = span.start().to_usize();
+        if start >= text.len() {
+            return None;
+        }
+
+        let end_exclusive = span.end_exclusive().to_usize();
+        if end_exclusive >= text.len() {
+            return None;
+        }
+
+        Some(&text[start..end_exclusive])
+    }
+
     pub fn is_top_level(&self) -> bool {
         self.indentation_level() == 0
     }

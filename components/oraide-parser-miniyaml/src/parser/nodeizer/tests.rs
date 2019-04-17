@@ -210,3 +210,38 @@ fn general_test() {
 
     assert_eq!(actual_nodes, expected_nodes);
 }
+
+#[test]
+fn key_text() {
+    // Arrange
+    let src = unindent("
+        ^BasePlayer@Wookie: # 0
+            AlwaysVisible:  # 1
+
+        Player:
+            Inherits: ^BasePlayer@Wookie
+    ");
+
+    let file_id = FileId(0);
+
+    let lexer = Tokenizer::new(file_id, &src);
+    let tokens = lexer.collect::<Vec<_>>();
+
+    let nodeizer = Nodeizer::new(tokens.into_iter());
+
+    // Act
+    let actual_key_texts = nodeizer
+        .map(|node| node.key_text(&src))
+        .collect::<Vec<_>>();
+
+    // Assert
+    let expected_key_texts = vec![
+        Some("^BasePlayer@Wookie"),
+        Some("AlwaysVisible"),
+        None,
+        Some("Player"),
+        Some("Inherits"),
+    ];
+
+    assert_eq!(actual_key_texts, expected_key_texts);
+}
