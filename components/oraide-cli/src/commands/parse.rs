@@ -19,7 +19,7 @@ use oraide_parser_miniyaml::{
     TokenCollectionExts as _,
 };
 
-pub struct Parse {
+pub(crate) struct Parse {
     file_ids: Vec<FileId>,
     db: Database,
 }

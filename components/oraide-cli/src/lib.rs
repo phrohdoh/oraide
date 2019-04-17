@@ -6,6 +6,9 @@ use std::{
 };
 
 mod commands;
+use commands::{
+    Parse,
+};
 
 // NOTE: This looks an awful lot like a binary package, but is indeed a library.
 //       This will be invoked by a top-level bin target (the overarching `oraide` crate),
@@ -29,7 +32,7 @@ pub fn main() {
 
             let file_count = file_paths.len();
 
-            let parse = commands::Parse::new(file_paths)
+            let parse = Parse::new(file_paths)
                 .expect("Failed to setup parsing");
 
             let start = std::time::Instant::now();
