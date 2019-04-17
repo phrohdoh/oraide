@@ -42,3 +42,10 @@ pub(crate) fn file_definitions(db: &impl ParserCtx, file_id: FileId) -> Vec<Node
 
     top_level_nodes
 }
+
+pub(crate) fn all_definitions(db: &impl ParserCtx) -> Vec<(FileId, Vec<Node>)> {
+    db.all_file_ids()
+        .into_iter()
+        .map(|file_id| (file_id, db.file_definitions(file_id)))
+        .collect()
+}

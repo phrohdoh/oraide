@@ -75,9 +75,22 @@ pub trait ParserCtx: salsa::Database {
 
     /// Compute the definitions (top-level items) of a [`FileId`]
     ///
+    /// This is, essentially, the file's symbol table
+    ///
     /// [`FileId`]: struct.FileId.html
     #[salsa::invoke(query_definitions::file_definitions)]
     fn file_definitions(&self, file_id: FileId) -> Vec<Node>;
+
+    /// Compute the definitions (top-level items) of all files
+    ///
+    /// This is, essentially, a symbole table for all files
+    ///
+    /// # Returns
+    /// For each file:
+    /// - The file's ID
+    /// - The file's definitions
+    #[salsa::invoke(query_definitions::all_definitions)]
+    fn all_definitions(&self) -> Vec<(FileId, Vec<Node>)>;
 }
 
 pub trait ParserCtxExt: ParserCtx {
