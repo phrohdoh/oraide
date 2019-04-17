@@ -1,0 +1,11 @@
+[package]
+name = "oraide-cli"
+version = "0.0.1"
+description = "The CLI for the OpenRA IDE project"
+authors = ["Taryn Hill <taryn@phrohdoh.com>"]
+edition = "2018"
+
+[dependencies]
+oraide-span = { path = "../oraide-span" }
+oraide-parser-miniyaml = { path = "../oraide-parser-miniyaml" }
+inventory = "^0.1"

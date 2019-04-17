@@ -14,3 +14,4 @@ oraide-parser-miniyaml = { path = "components/oraide-parser-miniyaml" }
 oraide-miniyaml = { path = "components/oraide-miniyaml" }
 oraide-sdk = { path = "components/oraide-sdk" }
 oraide-language-server = { path = "components/oraide-language-server" }
+oraide-cli = { path = "components/oraide-cli" }
