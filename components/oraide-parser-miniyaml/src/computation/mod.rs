@@ -72,6 +72,12 @@ pub trait ParserCtx: salsa::Database {
     /// [`FileId`]: struct.FileId.html
     #[salsa::invoke(query_definitions::file_tree)]
     fn file_tree(&self, file_id: FileId) -> Tree;
+
+    /// Compute the definitions (top-level items) of a [`FileId`]
+    ///
+    /// [`FileId`]: struct.FileId.html
+    #[salsa::invoke(query_definitions::file_definitions)]
+    fn file_definitions(&self, file_id: FileId) -> Vec<Node>;
 }
 
 pub trait ParserCtxExt: ParserCtx {

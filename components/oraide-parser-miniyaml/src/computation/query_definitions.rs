@@ -5,6 +5,7 @@ use oraide_span::{
 use crate::{
     Token,
     Tokenizer,
+    TokenCollectionExts,
     Node,
     Nodeizer,
     Tree,
@@ -29,4 +30,16 @@ pub(crate) fn file_tree(db: &impl ParserCtx, file_id: FileId) -> Tree {
     let nodes = db.file_nodes(file_id);
     let mut treeizer = Treeizer::new(nodes.into_iter(), &text);
     treeizer.run()
+}
+
+pub(crate) fn file_definitions(db: &impl ParserCtx, file_id: FileId) -> Vec<Node> {
+    let tree = db.file_tree(file_id);
+
+    let top_level_nodes = tree.node_ids.iter().skip(1) // skip the sentinel
+        .filter_map(|nid| tree.arena.get(*nid).map(|an| (*nid, &an.data)))
+        .filter(|(_nid, shrd_node)| shrd_node.is_top_level() && shrd_node.has_key())
+        .map(|(_nid, shrd_node)| shrd_node.clone())
+        .collect::<Vec<_>>();
+
+    top_level_nodes
 }

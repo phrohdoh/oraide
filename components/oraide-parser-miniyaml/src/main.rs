@@ -39,14 +39,10 @@ fn run(args: &mut CliArgs) -> Result<(), String> {
 
     let mut db = Database::default();
     let file_id = db.add_file(file_path.clone(), file_contents.clone());
-    let tree = db.file_tree(file_id);
+    let top_level_nodes = db.file_definitions(file_id);
 
-    let top_level_nodes = tree.node_ids.iter().skip(1) // skip the sentinel
-        .filter_map(|nid| tree.arena.get(*nid).map(|an| (*nid, &an.data)))
-        .filter(|(_nid, shrd_node)| shrd_node.is_top_level() && shrd_node.has_key());
-
-    let top_level_slices = top_level_nodes
-        .filter_map(|(_nid, shrd_node)| shrd_node.key_tokens.span())
+    let top_level_slices = top_level_nodes.iter()
+        .filter_map(|shrd_node| shrd_node.key_tokens.span())
         .map(|span| {
             let start = span.start().to_usize();
             let end_exclusive = span.end_exclusive().to_usize();
