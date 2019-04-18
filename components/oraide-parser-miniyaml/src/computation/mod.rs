@@ -17,6 +17,7 @@
 use oraide_span::{
     FileId,
     FileSpan,
+    ByteIndex,
 };
 
 use crate::{
@@ -52,6 +53,10 @@ pub trait ParserCtx: salsa::Database {
     /// [`FileId`]: struct.FileId.html
     #[salsa::input]
     fn all_file_ids(&self) -> Vec<FileId>;
+
+    /// Compute all line offsets in byte indicies
+    #[salsa::invoke(query_definitions::line_offsets)]
+    fn line_offsets(&self, file_id: FileId) -> Vec<usize>;
 
     /// Compute all of the [`Token`]s in a [`FileId`]
     ///

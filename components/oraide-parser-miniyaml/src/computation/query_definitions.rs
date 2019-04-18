@@ -13,6 +13,27 @@ use crate::{
     ParserCtx,
 };
 
+pub(crate) fn line_offsets(db: &impl ParserCtx, file_id: FileId) -> Vec<usize> {
+    let text = &db.file_text(file_id);
+    let mut acc = 0;
+
+    text.lines()
+        .map(|line_text| {
+            let line_start = acc;
+            acc += line_text.len();
+
+            if text[acc..].starts_with("\r\n") {
+                acc += 2;
+            } else if text[acc..].starts_with("\n") {
+                acc += 1;
+            }
+
+            line_start
+        })
+        .chain(std::iter::once(text.len()))
+        .collect()
+}
+
 pub(crate) fn file_tokens(db: &impl ParserCtx, file_id: FileId) -> Vec<Token> {
     let text = db.file_text(file_id);
     let mut tokenizer = Tokenizer::new(file_id, &text);
