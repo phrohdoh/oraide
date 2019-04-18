@@ -49,13 +49,16 @@ this_script_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd
 #       Feel free to remove this (and later references to it) if it isn't
 #       useful for you
 # must be one of `debug` or `release`
-mode="debug"
+profile="debug"
 
 # the name of the executable to intercept I/O for
-exe_name="orals"
+exe_name="oraide-language-server"
 
-# the path of the executable to intercept I/O for
-exe_path="${this_script_dir}/../../../target/${mode}/${exe_name}"
+# the absolute path of the executable to intercept I/O for
+abs_exe_path="$(dirname "${this_script_dir}")" # go up one level into `oraide-language-server`
+abs_exe_path="$(dirname "${abs_exe_path}")"    # go up one level into `components`
+abs_exe_path="$(dirname "${abs_exe_path}")"    # go up one level into `oraide` (repo root)
+abs_exe_path="${abs_exe_path}/target/${profile}/${exe_name}"
 
 # the file path to write process input to
 input_log_file_path="/tmp/${exe_name}.in.log"
@@ -67,5 +70,5 @@ output_log_file_path="/tmp/${exe_name}.out.log"
 
 cat - \
 | tee "${input_log_file_path}" \
-| RUST_LOG=${exe_name}=trace "${exe_path}" $@ \
+| RUST_LOG=${exe_name}=trace "${abs_exe_path}" $@ \
 | tee "${output_log_file_path}"
