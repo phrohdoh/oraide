@@ -14,3 +14,8 @@ pub use file::{
     FileId,
     FileSpan,
 };
+
+mod location;
+pub use location::{
+    Location,
+};
