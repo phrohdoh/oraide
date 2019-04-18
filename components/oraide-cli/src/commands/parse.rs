@@ -46,17 +46,18 @@ impl Parse {
 
             println!("Found {} definition(s) in {} ({:?})", defs.len(), file_name, *file_id);
 
-            let def_slices = defs.iter()
+            let def_locs_and_slices = defs.iter()
                 .filter_map(|shrd_node| shrd_node.key_tokens.span())
                 .map(|span| {
-                    let start = span.start().to_usize();
+                    let start = span.start();
+                    let loc = self.db.location(*file_id, start);
                     let end_exclusive = span.end_exclusive().to_usize();
-                    &text[start..end_exclusive]
+                    (loc, &text[start.to_usize()..end_exclusive])
                 })
                 .collect::<Vec<_>>();
 
-            for slice in def_slices {
-                println!(" - {}", slice);
+            for (loc, slice) in def_locs_and_slices {
+                println!(" - {} @ {}:{}", slice, file_name, loc);
             }
         }
     }

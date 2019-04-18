@@ -45,9 +45,9 @@ impl FindDefinition {
         for file_id in self.file_ids.iter() {
             if let Some(span) = self.db.file_definition_span(*file_id, self.name_to_find.clone()) {
                 let file_name = self.db.file_name(*file_id);
-                let start = span.start().to_usize();
-                let end_exclusive = span.end_exclusive().to_usize();
-                println!("{} @ [{}, {})", file_name, start, end_exclusive);
+                let start = span.start();
+                let loc = self.db.location(*file_id, start);
+                println!("{}:{}", file_name, loc);
             }
         }
     }
