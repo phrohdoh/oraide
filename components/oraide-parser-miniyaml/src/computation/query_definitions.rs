@@ -1,6 +1,8 @@
 use oraide_span::{
     FileId,
     FileSpan,
+    ByteIndex,
+    Location,
 };
 
 use crate::{
@@ -32,6 +34,35 @@ pub(crate) fn line_offsets(db: &impl ParserCtx, file_id: FileId) -> Vec<usize> {
         })
         .chain(std::iter::once(text.len()))
         .collect()
+}
+
+/// Convert a [`ByteIndex`] into a [`Location`] using [`line_offsets`] to
+/// quickly find the byte index the line start locations
+///
+/// [`ByteIndex`]: struct.ByteIndex.html
+/// [`Location`]: struct.Location.html
+/// [`line_offsets`]: #fn.line_offsets
+pub(crate) fn location(db: &impl ParserCtx, file_id: FileId, index: ByteIndex) -> Location {
+    let line_offsets = db.line_offsets(file_id);
+
+    match line_offsets.binary_search(&index.to_usize()) {
+        Ok(line_idx) => {
+            // Found the start of the line directly
+            Location::new(line_idx + 1, 1)
+        },
+        Err(next_line_num) => {
+            let line_idx = next_line_num - 1;
+
+            // Found something in the middle
+            let line_start_idx = line_offsets[line_idx];
+
+            // Count utf-8 chars to determine column
+            let text = &db.file_text(file_id);
+            let column = text[line_start_idx..index.to_usize()].chars().count();
+
+            Location::new(next_line_num, column)
+        },
+    }
 }
 
 pub(crate) fn file_tokens(db: &impl ParserCtx, file_id: FileId) -> Vec<Token> {
