@@ -1,0 +1,14 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "extensionHost",
+            "request": "launch",
+            "name": "VSCode Extension",
+            "runtimeExecutable": "${execPath}",
+            "args": [ "--extensionDevelopmentPath=${workspaceRoot}/editors/vscode" ],
+            "outFiles": [ "editors/vscode/out/**/*.js" ],
+            "preLaunchTask": "Build VSCode LSP Client Extension"
+        },
+    ]
+}

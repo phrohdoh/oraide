@@ -1,0 +1,10 @@
+# macOS-specific files
+.DS_Store
+Thumbs.db
+
+# Node.js
+npm-debug.log
+node_modules/*
+
+# Build output
+out/*

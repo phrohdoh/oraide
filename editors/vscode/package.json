@@ -1,0 +1,90 @@
+{
+  "name": "oraide-vscode",
+  "displayName": "OpenRA IDE",
+  "description": "Visual Studio Code extension for OpenRA",
+  "main": "./out/extension.js",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Phrohdoh/oraide"
+  },
+  "activationEvents": [
+    "onLanguage:miniyaml",
+    "onLanguage:yaml"
+  ],
+  "version": "0.0.1",
+  "author": "Taryn Hill <taryn@phrohdoh.com>",
+  "publisher": "Phrohdoh",
+  "private": true,
+  "scripts": {
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "lint": "tslint --config ./tslint.json './src/**/*.ts'",
+    "test": "yarn run compile && node ./node_modules/vscode/bin/test",
+    "postinstall": "node ./node_modules/vscode/bin/install",
+    "build-ext": "mkdir -p out && yarn && yarn compile && yes | ./node_modules/.bin/vsce package -o ./out/oraide.vsix",
+    "install-ext": "yarn build-ext && code --install-extension ./out/oraide.vsix"
+  },
+  "contributes": {
+    "languages": [
+      {
+        "id": "miniyaml",
+        "extensions": [
+          ".yaml",
+          ".miniyaml",
+          ".oraml"
+        ],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "commands": [
+      {
+        "command": "oraide.server.restart",
+        "title": "Restart the OpenRA IDE Language Server",
+        "description": "Sometimes, it's just best to try turning it off and on again",
+        "category": "OpenRA"
+      }
+    ],
+    "configuration": {
+      "type": "object",
+      "title": "OpenRA IDE Configuration",
+      "properties": {
+        "oraide.trace.server": {
+          "type": "string",
+          "enum": [
+            "off",
+            "messages",
+            "verbose"
+          ],
+          "default": "off",
+          "scope": "window"
+        },
+        "oraide.server.exePath": {
+          "type": "string",
+          "default": "oraide-language-server",
+          "description": "Language server executable name (or path) to run"
+        },
+        "oraide.server.shouldLogToFile": {
+          "type": "boolean",
+          "default": false,
+          "description": "When set to `true` the language server's stderr is logged to a file at workspace root level.  Requires reloading extension after changing."
+        }
+      }
+    }
+  },
+  "engines": {
+    "vscode": "^1.34.0"
+  },
+  "dependencies": {
+    "lazystream": "^1.0.0",
+    "vscode-languageclient": "^5.2.1"
+  },
+  "devDependencies": {
+    "@types/node": "^11.13.0",
+    "prettier": "^1.16.4",
+    "tslint": "^5.14.0",
+    "tslint-config-prettier": "^1.18.0",
+    "typescript": "^3.0.0",
+    "vsce": "^1.59.0",
+    "vscode": "^1.1.3"
+  }
+}
