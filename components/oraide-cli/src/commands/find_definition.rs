@@ -8,9 +8,6 @@ use oraide_span::FileId;
 use oraide_parser_miniyaml::{
     Database,
     ParserCtx as _,
-    ParserCtxExt as _,
-    TokenCollectionExts as _,
-    Node,
 };
 
 pub(crate) struct FindDefinition {
