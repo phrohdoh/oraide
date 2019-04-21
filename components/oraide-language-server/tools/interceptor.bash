@@ -68,7 +68,10 @@ output_log_file_path="/tmp/${exe_name}.out.log"
 
 ### end configuration
 
+# Rust module paths, which is what `RUST_LOG` uses, have `_` not `-`
+exe_log_id=${exe_name//-/_}
+
 cat - \
 | tee "${input_log_file_path}" \
-| RUST_LOG=${exe_name}=trace "${abs_exe_path}" $@ \
+| RUST_LOG=${exe_log_id}=trace "${abs_exe_path}" $@ \
 | tee "${output_log_file_path}"
