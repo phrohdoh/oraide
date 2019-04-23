@@ -65,13 +65,3 @@ Read [./docs/dev/architecture.md](./docs/dev/architecture.md) for an overview of
 ### Testing (manual & autmated)
 
 TODO
-
-## Contact Us
-
-You can find me as _Phrohdoh_ on [OpenRA's Discord server](https://discord.me/openra).
-
-Be sure to read and understand the server rules before participating.
-
-Do know that the OpenRA IDE project (also called `oraide`) is an unofficial project, so you should probably ping me directly in the `#off-topic` channel.
-
-Please don't hesitate to reach out if you have questions/comments/concerns/praise/whatever!

@@ -6,10 +6,6 @@ A collection of tools with the aim of lowering the barrier to entry for OpenRA-b
 
 See the [LICENSE](./LICENSE) file.
 
-## Project lead / point-of-contact
-
-Taryn (a.k.a. Phrohdoh taryn@phrohdoh.com)
-
 ## Terms to know
 
 **OpenRA ([link](https://openra.net))**: An open-source ([GPLv3+](https://www.gnu.org/licenses/quick-guide-gplv3.html)) game engine implemented in [C#](https://docs.microsoft.com/en-us/dotnet/csharp/) on top of the [.NET Framework](https://en.wikipedia.org/wiki/.NET_Framework)
@@ -36,3 +32,13 @@ The `oraide` project is comprised of multiple components (some of which have dep
 ## Architecture
 
 Read [./docs/dev/architecture.md](./docs/dev/architecture.md) for an overview of the _OpenRA IDE_ project architecture (this does *not* cover LSP clients).
+
+## Contact Us
+
+You can find the maintainer as _Phrohdoh_ on [OpenRA's Discord server](https://discord.openra.net).
+
+Be sure to read and understand the server rules before participating.
+
+Do know that the OpenRA IDE project (also called `oraide`) is an unofficial project, so you should probably ping me directly in the `#off-topic` channel.
+
+Please don't hesitate to reach out if you have questions/comments/concerns/praise/whatever!
