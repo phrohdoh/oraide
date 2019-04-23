@@ -1,6 +1,6 @@
 # `oraide`
 
-A collection of tools with the aim of lowering the barrier to entry for -based game development.
+A collection of tools with the aim of lowering the barrier to entry for OpenRA-based game development.
 
 ## License
 
