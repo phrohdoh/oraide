@@ -4,7 +4,7 @@ A collection of tools with the aim of lowering the barrier to entry for -based g
 
 ## License
 
-Proprietary.
+See the [LICENSE](./LICENSE) file.
 
 ## Project lead / point-of-contact
 
@@ -21,6 +21,8 @@ Taryn (a.k.a. Phrohdoh taryn@phrohdoh.com)
 **LSP ([link](https://microsoft.github.io/language-server-protocol/specification))**: The _Language Server Protocol_ spearheaded by Microsoft
 
 ## General project structure
+
+> NOTE: All docs in this repository are highly WIP and possibly out-dated
 
 The `oraide` project is comprised of multiple components (some of which have dependencies on others).
 
