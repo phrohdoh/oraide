@@ -2,6 +2,14 @@
 
 A collection of tools with the aim of lowering the barrier to entry for OpenRA-based game development.
 
+## Screenshots
+
+<details>
+<summary>Hovering over a trait property on an actor</summary>
+
+![vscode-hover](./images/vscode-extension-a65f152.png)
+</details>
+
 ## License
 
 See the [LICENSE](./LICENSE) file.
