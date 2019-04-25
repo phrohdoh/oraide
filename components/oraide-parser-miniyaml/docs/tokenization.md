@@ -34,4 +34,8 @@ let tokens: Vec<Token> = tokenizer.run();
 
 Each `Token` has a `kind` (identifier, `@` symbol, `~` symbol, whitespace, etc.) and a `span`, which is a pair of byte indicies pointing into the source file.
 
-The raw text is not stored in the `Token` type but can be queried, which will be covered in the [incremental recomputation](./incremental-recomputation.md) document.
+---
+
+Go back [to the readme](../README.md).
+
+Or read about the [nodeization](./nodeization.md) phase.

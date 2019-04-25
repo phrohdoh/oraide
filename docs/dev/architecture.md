@@ -4,7 +4,7 @@ The _OpenRA IDE_ project is made up of multiple codebases, each potentially cont
 
 This particular codebase contains the "core" pieces of the _OpenRA IDE_ project:
 
-- `oraide-parser-miniyaml`: lexing, parsing, and tree-building of MiniYaml documents
+- [`oraide-parser-miniyaml`]: lexing, parsing, and tree-building of MiniYaml documents
 - `oraide-sdk`: SDK-based project management
 - `oraide-language-server`: an LSP server for use with LSP clients (such as the Visual Studio Code extension `oraide-vscode`)
 
@@ -23,16 +23,4 @@ Things to cover:
 - Symbol tables (this doesn't exist in the code yet)
     - What / Why / How
 
-## oraide-parser-miniyaml
-
-This package converts a single text document into a single tree of nodes.
-
-<small>In the future this may change to produce a single forest (numerous trees) for a single text document.</small>
-
-<details>
-<summary>MiniYaml parsing</summary>
-
-The `oraide-parser-miniyaml` package is implemented in 2 parts:
-
-- The underlying parser phases
-- Memoized computations
+[`oraide-parser-miniyaml`]: ../../components/oraide-parser-miniyaml/README.md
