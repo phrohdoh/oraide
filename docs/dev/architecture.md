@@ -4,6 +4,7 @@ The _OpenRA IDE_ project is made up of multiple codebases, each potentially cont
 
 This particular codebase contains the "core" pieces of the _OpenRA IDE_ project:
 
+- [`oraide-query-system`]: on-demand, incremental computation
 - [`oraide-parser-miniyaml`]: lexing, parsing, and tree-building of MiniYaml documents
 - `oraide-sdk`: SDK-based project management
 - `oraide-language-server`: an LSP server for use with LSP clients (such as the Visual Studio Code extension `oraide-vscode`)
@@ -20,7 +21,9 @@ Things to cover:
     - lexing: producing a stream of tokens
     - parsing: producing a stream of nodes
     - tree-building: organizing the nodes into a data structure that looks like a tree (an `Arena`)
-- Symbol tables (this doesn't exist in the code yet)
+- Symbol tables
     - What / Why / How
+        - `ParserCtx::all_definitions`
 
 [`oraide-parser-miniyaml`]: ../../components/oraide-parser-miniyaml/README.md
+[`oraide-query-system`]: ../../components/oraide-query-system/README.md

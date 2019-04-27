@@ -2,11 +2,9 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-use crate::{
-    computation::{
-        ParserCtxExt,
-        ParserCtxStorage,
-    },
+use oraide_parser_miniyaml::{
+    ParserCtxExt,
+    ParserCtxStorage,
 };
 
 /// Entrypoint into MiniYaml parsing
@@ -15,7 +13,13 @@ use crate::{
 ///
 /// # Example
 /// ```rust
-/// use oraide_parser_miniyaml::{Database,ParserCtx,ParserCtxExt,Tree};
+/// # use oraide_query_system::Database;
+/// use oraide_parser_miniyaml::{
+///     ParserCtx,
+///     ParserCtxExt,
+///     Tree,
+/// };
+///
 /// let mut db = Database::default();
 /// let file_id = db.add_file("example.yaml", "Hello:\n");
 /// let tree: Tree = db.file_tree(file_id);
@@ -41,3 +45,5 @@ impl Default for Database {
         db
     }
 }
+
+impl ParserCtxExt for Database {}

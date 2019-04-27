@@ -2,17 +2,18 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-//! # `oraide-parser-miniyaml`
-//!
 //! Convert textual MiniYaml documents into MiniYaml trees
 //!
-//! # Example
+//! # Examples
+//!
 //! ```rust
-//! # use oraide_parser_miniyaml::{Database,ParserCtx,ParserCtxExt,Tree};
-//! let mut db = Database::default();
-//! let file_id = db.add_file("example.yaml", "Hello:\n");
-//! let tree: Tree = db.file_tree(file_id);
+//! //
 //! ```
+//!
+//! See [`Database`] docs for an example with [`oraide-query-system`]
+//!
+//! [`oraide-query-system`]: ../oraide_query_system/index.html
+//! [`Database`]: ../oraide_query_system/struct.Database.html
 
 mod parser;
 pub use parser::{
@@ -31,7 +32,7 @@ pub use parser::{
 
 mod computation;
 pub use computation::{
-    Database,
     ParserCtx,
     ParserCtxExt,
+    ParserCtxStorage,
 };

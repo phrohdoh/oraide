@@ -2,22 +2,6 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-//! # `computation`
-//!
-//! Exposes the parser's functionality wrapped in memoized computations
-//!
-//! # Example
-//! ```rust
-//! use oraide_parser_miniyaml::{Database,ParserCtx,ParserCtxExt,Tree};
-//! let mut db = Database::default();
-//! // note that the first argument is a name (which can be a path)
-//! // but you must provide the content to turn into a tree,
-//! // this package doesn't do that for you
-//! let file_id = db.add_file("example.yaml", "Hello:\n");
-//! let tree: Tree = db.file_tree(file_id);
-//! ```
-//!
-
 use oraide_span::{
     FileId,
     FileSpan,
@@ -29,11 +13,6 @@ use crate::{
     Token,
     Node,
     Tree,
-};
-
-mod database;
-pub use database::{
-    Database,
 };
 
 mod query_definitions;
@@ -110,9 +89,14 @@ pub trait ParserCtx: salsa::Database {
     #[salsa::invoke(query_definitions::all_definitions)]
     fn all_definitions(&self) -> Vec<(FileId, Vec<Node>)>;
 
-    /// Compute the span of a definition with the given name in a particular file
+    /// Compute the span of a definition with the given name in a particular
+    /// file
     #[salsa::invoke(query_definitions::file_definition_span)]
-    fn file_definition_span(&self, file_id: FileId, def_name: String) -> Option<FileSpan>;
+    fn file_definition_span(
+        &self,
+        file_id: FileId,
+        def_name: String,
+    ) -> Option<FileSpan>;
 }
 
 pub trait ParserCtxExt: ParserCtx {
@@ -120,22 +104,21 @@ pub trait ParserCtxExt: ParserCtx {
         self.set_all_file_ids(Default::default());
     }
 
-    /// Add a file to the database
+    /// Add a file to a [`Database`]
     ///
-    /// # Example
-    /// ```rust
-    /// # use oraide_parser_miniyaml::{Database,ParserCtx,ParserCtxExt};
-    /// let mut db = Database::default();
-    /// let text = "Hello:\n";
-    /// let file_id = db.add_file("example.yaml", text);
-    /// assert_eq!(text, db.file_text(file_id));
-    /// ```
+    /// See [`Database`]'s docs for a code example.
     ///
     /// # Returns
-    /// A newly-created [`FileId`] that uniquely represents this file in this context
+    /// A newly-created [`FileId`] that uniquely represents this file in a
+    /// [`Database`]
     ///
     /// [`FileId`]: struct.FileId.html
-    fn add_file(&mut self, file_name: impl Into<String>, file_text: impl Into<String>) -> FileId {
+    /// [`Database`]: ../oraide_query_system/struct.Database.html
+    fn add_file(
+        &mut self,
+        file_name: impl Into<String>,
+        file_text: impl Into<String>,
+    ) -> FileId {
         let file_name = file_name.into();
         let file_text = file_text.into();
 
@@ -150,5 +133,3 @@ pub trait ParserCtxExt: ParserCtx {
         file_id
     }
 }
-
-impl ParserCtxExt for database::Database {}

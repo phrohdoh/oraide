@@ -9,8 +9,10 @@ use std::{
 };
 
 use oraide_span::FileId;
+
+use oraide_query_system::Database;
+
 use oraide_parser_miniyaml::{
-    Database,
     ParserCtx as _,
 };
 

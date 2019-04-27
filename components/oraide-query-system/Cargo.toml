@@ -1,0 +1,10 @@
+[package]
+name = "oraide-query-system"
+version = "0.0.1"
+authors = ["Taryn Hill <taryn@phrohdoh.com>"]
+description = "An on-demand, incremental computation system"
+edition = "2018"
+
+[dependencies]
+oraide-parser-miniyaml = { path = "../oraide-parser-miniyaml" }
+salsa = "^0.12"
