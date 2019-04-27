@@ -4,6 +4,7 @@ The _OpenRA IDE_ project is made up of multiple codebases, each potentially cont
 
 This particular codebase contains the "core" pieces of the _OpenRA IDE_ project:
 
+- [`oraide-actor`]: a primitive actor system that allows concurrent computation
 - [`oraide-query-system`]: on-demand, incremental computation
 - [`oraide-parser-miniyaml`]: lexing, parsing, and tree-building of MiniYaml documents
 - `oraide-sdk`: SDK-based project management
@@ -25,5 +26,6 @@ Things to cover:
     - What / Why / How
         - `ParserCtx::all_definitions`
 
+[`oraide-actor`]: ../../components/oraide-actor/README.md
 [`oraide-parser-miniyaml`]: ../../components/oraide-parser-miniyaml/README.md
 [`oraide-query-system`]: ../../components/oraide-query-system/README.md

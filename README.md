@@ -33,6 +33,7 @@ The `oraide` project is comprised of multiple components (some of which have dep
 | component | description |
 |-|-|
 | [oraide-span](./components/oraide-span/README.md) | A library that implements types for text &amp; file tracking |
+| [oraide-actor](./components/oraide-actor/README.md) | A library that implements a primitive actor system |
 | [oraide-query-system](./components/oraide-query-system/README.md) | A library that implements an on-demand, incremental computation system |
 | [oraide-miniyaml](./components/oraide-miniyaml/README.md) | A library that converts MiniYaml text to trees |
 | [oraide-sdk](./components/oraide-sdk/README.md) | A library that allows programmatic management of SDK-based projects |

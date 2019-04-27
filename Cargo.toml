@@ -10,6 +10,7 @@ name = "ora"
 
 [dependencies]
 oraide-span = { path = "components/oraide-span" }
+oraide-actor = { path = "components/oraide-actor" }
 oraide-parser-miniyaml = { path = "components/oraide-parser-miniyaml" }
 oraide-query-system = { path = "components/oraide-query-system" }
 oraide-miniyaml = { path = "components/oraide-miniyaml" }
