@@ -19,6 +19,19 @@ use crate::{
     ParserCtx,
 };
 
+/// Find the [`FileId`] associated with `file_name`, if one exists
+///
+/// [`FileId`]: struct.FileId.html
+pub(crate) fn file_name_to_file_id(db: &impl ParserCtx, file_name: String) -> Option<FileId> {
+    for file_id in db.all_file_ids() {
+        if db.file_name(file_id) == file_name {
+            return Some(file_id);
+        }
+    }
+
+    None
+}
+
 pub(crate) fn line_offsets(db: &impl ParserCtx, file_id: FileId) -> Vec<usize> {
     let text = &db.file_text(file_id);
     let mut acc = 0;

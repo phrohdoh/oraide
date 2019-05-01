@@ -38,6 +38,12 @@ pub trait ParserCtx: salsa::Database {
     #[salsa::input]
     fn all_file_ids(&self) -> Vec<FileId>;
 
+    /// Find the [`FileId`] associated with `file_name`, if one exists
+    ///
+    /// [`FileId`]: struct.FileId.html
+    #[salsa::invoke(query_definitions::file_name_to_file_id)]
+    fn file_name_to_file_id(&self, file_name: String) -> Option<FileId>;
+
     /// Compute all line offsets in byte indicies
     #[salsa::invoke(query_definitions::line_offsets)]
     fn line_offsets(&self, file_id: FileId) -> Vec<usize>;
