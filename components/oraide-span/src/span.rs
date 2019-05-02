@@ -32,6 +32,8 @@ impl<TSource: Copy + fmt::Debug> Span<TSource> {
         let start = start.into();
         let end_exclusive = end_exclusive.into();
 
+        assert!(start.to_usize() <= end_exclusive.to_usize());
+
         Self {
             source,
             start,
