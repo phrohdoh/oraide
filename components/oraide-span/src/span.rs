@@ -12,6 +12,9 @@ use crate::{
 };
 
 /// Used to track spans in text documents
+///
+/// A Span, `span`, can be expressed in _interval notation_ as
+/// `[span.start, span.end_exclusive)`
 /// 
 /// ```rust
 /// # use oraide_span::{Span,FileId};
