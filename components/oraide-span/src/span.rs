@@ -119,4 +119,41 @@ impl<TSource: Copy + fmt::Debug> Span<TSource> {
     pub fn len(&self) -> ByteCount {
         self.end_exclusive() - self.start()
     }
+
+    /// Determine whether this span contains `byte_index`
+    ///
+    /// If `byte_index` is equal to this span's `end_exclusive` it is considered
+    /// not contained within this span.
+    pub fn contains(&self, byte_index: impl Into<ByteIndex>) -> bool {
+        let byte_index = byte_index.into();
+        self.start <= byte_index && byte_index < self.end_exclusive
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::*;
+
+    #[test]
+    fn contains() {
+        let span = Span::from_str(FileId(0), "Hello:\n\tWorld: Terra\n\t\tChickens:\n");
+        assert!(span.contains(ByteIndex::from(0)));
+
+        let end = ByteIndex::from(span.end_exclusive.to_usize() - 1);
+        assert!(span.contains(end));
+    }
+
+    #[test]
+    fn contains_does_not_include_end_exclusive() {
+        let span = Span::from_str(FileId(0), "Hello: World");
+        let end_exclusive = span.end_exclusive();
+        assert!(!span.contains(end_exclusive));
+    }
+
+    #[test]
+    fn contains_does_not_include_out_of_bounds() {
+        let span = Span::from_str(FileId(0), "Hello: World");
+        let out_of_bounds = ByteIndex::from(span.end_exclusive().to_usize() + 1);
+        assert!(!span.contains(out_of_bounds));
+    }
 }
