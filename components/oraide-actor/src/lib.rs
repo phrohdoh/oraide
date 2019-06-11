@@ -16,6 +16,51 @@ use std::{
     },
 };
 
+use url::Url;
+
+use languageserver_types::{
+    Position as LsPos,
+    Range,
+};
+
+pub type TaskId = usize;
+
+#[derive(Debug)]
+pub enum QueryRequest {
+    Initialize {
+        task_id: TaskId,
+    },
+    HoverAtPosition {
+        task_id: TaskId,
+        file_url: Url,
+        file_pos: LsPos,
+    },
+    FileOpened {
+        file_url: Url,
+        file_text: String,
+    },
+}
+
+impl QueryRequest {
+    pub fn will_mutate_server_state(&self) -> bool {
+        match self {
+            QueryRequest::Initialize { .. }
+            | QueryRequest::FileOpened { .. } => true,
+            QueryRequest::HoverAtPosition { .. } => false,
+        }
+    }
+}
+
+pub enum QueryResponse {
+    AckInitialize {
+        task_id: TaskId,
+    },
+    HoverData {
+        task_id: TaskId,
+        data: String,
+    },
+}
+
 /// An actor in the task system.  This gives us a uniform way to
 /// create, control, message, and shut down concurrent workers.
 pub trait Actor {

@@ -103,6 +103,22 @@ pub trait ParserCtx: salsa::Database {
         file_id: FileId,
         def_name: String,
     ) -> Option<FileSpan>;
+
+    /// Compute the `Token` in `file_id` with a span containing `idx`, if any
+    #[salsa::invoke(query_definitions::token_spanning_byte_index)]
+    fn token_spanning_byte_index(
+        &self,
+        file_id: FileId,
+        idx: ByteIndex,
+    ) -> Option<Token>;
+
+    /// Compute the `Node` in `file_id` with a span containing `idx`, if any
+    #[salsa::invoke(query_definitions::node_spanning_byte_index)]
+    fn node_spanning_byte_index(
+        &self,
+        file_id: FileId,
+        idx: ByteIndex,
+    ) -> Option<Node>;
 }
 
 pub trait ParserCtxExt: ParserCtx {

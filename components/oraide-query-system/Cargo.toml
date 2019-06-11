@@ -6,5 +6,11 @@ description = "An on-demand, incremental computation system"
 edition = "2018"
 
 [dependencies]
+oraide-span = { path = "../oraide-span" }
 oraide-parser-miniyaml = { path = "../oraide-parser-miniyaml" }
 salsa = "^0.12"
+oraide-actor = { path = "../oraide-actor" }
+derive_more = "0.14.1"
+languageserver-types = "0.54.0"
+log = "0.4.6"
+

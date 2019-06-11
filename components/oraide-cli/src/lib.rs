@@ -16,7 +16,9 @@ use std::{
     },
 };
 
-use oraide_span::FileId;
+use oraide_span::{
+    FileId,
+};
 
 use oraide_query_system::Database;
 
@@ -28,7 +30,10 @@ mod commands;
 use commands::{
     Parse,
     FindDefinition,
+    Hover,
 };
+
+mod ide;
 
 // NOTE: This looks an awful lot like a binary package, but is indeed a library.
 //       This will be invoked by a top-level bin target (the overarching `oraide` crate),
@@ -40,6 +45,7 @@ pub fn main() {
     let cmd = match args.next() {
         Some(cmd) => cmd,
         _ => {
+            eprintln!("<no arg>");
             print_usage_instructions();
             return;
         },
@@ -84,6 +90,48 @@ pub fn main() {
             find_def.run();
             println!("[info] took {:?} to look for definition(s) of `{}`", start.elapsed(), name_to_find);
         },
+        "hover" => {
+            let file_path = match args.next() {
+                Some(file_path) => file_path.into(),
+                _ => {
+                    eprintln!();
+                    eprintln!("Please provide the <file-path> parameter (see below for more information)");
+                    eprintln!();
+                    print_usage_instructions();
+                    return;
+                },
+            };
+
+            let line_idx = match args.next().map(|num_str| num_str.parse()) {
+                Some(Ok(num)) => num,
+                _ => {
+                    eprintln!();
+                    eprintln!("Please provide the <line-number> parameter as a non-negative integer (see usage for more information)");
+                    eprintln!();
+                    print_usage_instructions();
+                    return;
+                },
+            };
+
+            let col_idx = match args.next().map(|num_str| num_str.parse()) {
+                Some(Ok(num)) => num,
+                _ => {
+                    eprintln!();
+                    eprintln!("Please provide the <column-number> parameter as a non-negative integer (see usage for more information)");
+                    eprintln!();
+                    print_usage_instructions();
+                    return;
+                },
+            };
+
+            let hover = Hover::new(file_path, line_idx, col_idx)
+                .expect("Failed to setup hover");
+
+            hover.run();
+        },
+        "ide" => {
+            ide::ide();
+        },
         "lint" => {
             match args.next() {
                 Some(_file_path) => {
@@ -92,15 +140,21 @@ pub fn main() {
                 _ => eprintln!("Please provide a file path to lint"),
             }
         },
-        _ => print_usage_instructions(),
+        other => {
+            eprintln!("!!! got `{}`", other);
+            print_usage_instructions();
+        }
     }
 }
 
 fn print_usage_instructions() {
-    println!("Usage:");
-    println!("  ora parse <file-path>                         - print all definitions (top-level items) in a file");
-    println!("  ora find-defs <project-root-path> <item-name> - find all definitions with name <item-name> in <project-root-path>");
-  //println!("  ora lint <file-path>                          - unimplemented");
+    eprintln!("Usage:");
+    eprintln!("  ora ide                                                 - run the OpenRA language server / IDE support");
+    eprintln!("  ora parse     <file-path>                               - print all definitions (top-level items) in a file");
+    eprintln!("  ora find-defs <project-root-path> <item-name>           - find all definitions with name <item-name> in <project-root-path>");
+    eprintln!("  ora hover     <file-path> <line-number> <column-number> - print hover data for the token at <file-path>:<line-number>:<column-number>");
+    eprintln!("    example: ora hover foo/bar/baz.yaml 15 8");
+  //eprintln!("  ora lint <file-path>                                    - unimplemented");
 }
 
 /// Read the contents of `file_path` and add it to `db`, creating and returning

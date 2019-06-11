@@ -23,6 +23,24 @@ def get_subdirs_of(dir):
             if os.path.isdir(os.path.join(dir, name))
     ]
 
+
+blacklisted_component_names = ['oraide-miniyaml']
+
+
+def get_component_paths_in_dir(dir):
+    component_dirs = []
+
+    subdirs = get_subdirs_of(dir)
+    for abs_path in subdirs:
+        for blacklsited_comp_name in blacklisted_component_names:
+            if abs_path.endswith(blacklsited_comp_name):
+                continue
+            else:
+                component_dirs.append(abs_path)
+
+    return component_dirs
+
+
 known_cargo_commands = ['check', 'test', 'doc', 'build']
 known_cargo_commands_display = ', '.join([f"'{name}'" for name in known_cargo_commands])
 
@@ -51,11 +69,11 @@ if run_proc:
     run_proc_display = f"'{' '.join(run_proc)}'"
 
     print(f"Executing {run_proc_display} in {proj_root_dir}")
-    subprocess.run(run_proc, cwd=proj_root_dir)
+    subprocess.run(run_proc, cwd=proj_root_dir, check=True)
 
-    for abs_path in get_subdirs_of(os.path.join(proj_root_dir, 'components')):
+    for abs_path in get_component_paths_in_dir(os.path.join(proj_root_dir, 'components')):
         print(f"Executing {run_proc_display} in {abs_path}")
-        subprocess.run(run_proc, cwd=abs_path)
+        subprocess.run(run_proc, cwd=abs_path, check=True)
 
 else:
     sys.exit("no command to run")

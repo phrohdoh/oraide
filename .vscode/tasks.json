@@ -4,6 +4,13 @@
     "version": "2.0.0",
     "tasks": [
         {
+            "label": "Build all",
+            "dependsOn": [
+                "Build VSCode LSP Client Extension",
+                "Build 'components'"
+            ]
+        },
+        {
             "label": "Build VSCode LSP Client Extension",
             "type": "shell",
             "command": "yarn install-ext",

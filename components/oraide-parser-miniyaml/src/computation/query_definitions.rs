@@ -138,3 +138,41 @@ pub(crate) fn file_definition_span(db: &impl ParserCtx, file_id: FileId, def_nam
 
     None
 }
+
+/// Compute the `Token` in `file_id` with a span containing `idx`, if any
+pub(crate) fn token_spanning_byte_index(
+    db: &impl ParserCtx,
+    file_id: FileId,
+    idx: ByteIndex,
+) -> Option<Token> {
+    let tokens = db.file_tokens(file_id);
+
+    if tokens.is_empty() {
+        return None;
+    }
+
+    tokens.into_iter()
+        .find(|token| token.span.contains(idx))
+}
+
+/// Compute the `Node` in `file_id` with a span containing `idx`, if any
+pub(crate) fn node_spanning_byte_index(
+    db: &impl ParserCtx,
+    file_id: FileId,
+    idx: ByteIndex
+) -> Option<Node> {
+    let nodes = db.file_nodes(file_id);
+
+    for node in nodes.into_iter() {
+        let span = match node.span() {
+            Some(span) => span,
+            _ => continue,
+        };
+
+        if span.contains(idx) {
+            return Some(node);
+        }
+    }
+
+    None
+}

@@ -2,9 +2,33 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+use std::{
+    collections::VecDeque,
+    sync::mpsc::Sender,
+    thread,
+};
+
+use salsa::{
+    ParallelDatabase,
+    Snapshot,
+};
+
+use oraide_actor::{
+    Actor,
+    QueryRequest,
+    QueryResponse,
+};
+
 use oraide_parser_miniyaml::{
     ParserCtxExt,
     ParserCtxStorage,
+};
+
+mod lang_server;
+pub use lang_server::{
+    LangServerCtx,
+    Markdown,
+    LsPos,
 };
 
 /// Entrypoint into MiniYaml parsing
@@ -47,3 +71,96 @@ impl Default for Database {
 }
 
 impl ParserCtxExt for Database {}
+
+impl ParallelDatabase for Database {
+    fn snapshot(&self) -> Snapshot<Self> {
+        Snapshot::new(Self {
+            rt: self.rt.snapshot(self),
+        })
+    }
+}
+
+pub struct QuerySystem {
+    send_channel: Sender<QueryResponse>,
+    db: Database,
+    needs_run_diags: bool,
+}
+
+impl Actor for QuerySystem {
+    type Input = QueryRequest;
+
+    fn on_new_messages(&mut self, messages: &mut VecDeque<Self::Input>) {
+        // Find the last message that will mutate the server state.
+        let opt_last_mutating_idx = messages.iter()
+            .rposition(QueryRequest::will_mutate_server_state);
+
+        // Up until that point we need to process *only* mutating messages.
+        if let Some(last_mutating_idx) = opt_last_mutating_idx {
+            for message in messages.drain(0..=last_mutating_idx) {
+                if message.will_mutate_server_state() {
+                    self.process_message(message);
+                }
+            }
+
+            // After each mutation we need to perform diagnostics checking
+            self.needs_run_diags = true;
+        }
+
+        // All the mutations are processed, now process the next non-mutation.
+        if let Some(message) = messages.pop_front() {
+            assert!(!message.will_mutate_server_state());
+            self.process_message(message);
+        }
+    }
+}
+
+impl QuerySystem {
+    pub fn new(send_channel: Sender<QueryResponse>) -> Self {
+        Self {
+            send_channel,
+            db: Database::default(),
+            needs_run_diags: false,
+        }
+    }
+
+    fn process_message(&mut self, message: QueryRequest) {
+        match message {
+            QueryRequest::Initialize { task_id } => {
+                let chan = self.send_channel.clone();
+                send(chan, QueryResponse::AckInitialize { task_id });
+            },
+            QueryRequest::HoverAtPosition { task_id, file_url, file_pos } => {
+                thread::spawn({
+                    let db = self.db.snapshot();
+                    let chan = self.send_channel.clone();
+
+                    move || {
+                        match db.hover_with_file_name(file_url.as_str(), file_pos) {
+                            Some(md) => send(chan, QueryResponse::HoverData {
+                                task_id, 
+                                data: md.0,
+                            }),
+                            _ => send(chan, QueryResponse::HoverData {
+                                task_id,
+                                data: "<no results>".into(),
+                            })
+                        }
+                    }
+                });
+            },
+            QueryRequest::FileOpened { file_url, file_text } => {
+                // TODO: How will we handle duplicates?
+                let _ = self.db.add_file(file_url.as_str(), file_text);
+            },
+        }
+    }
+}
+
+fn send(channel: Sender<QueryResponse>, message: QueryResponse) {
+    if let Err(err) = channel.send(message) {
+        log::error!("internal error: {}", err);
+    }
+}
+
+#[cfg(test)]
+mod tests;

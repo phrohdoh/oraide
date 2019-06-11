@@ -101,6 +101,15 @@ pub struct Token {
 }
 
 impl Token {
+    /// Get the text slice of this token by calling [`Span::text`] on this
+    /// token's `span`
+    ///
+    /// [`Span::text`]: ../oraide_span/struct.Span.html#method.text
+    #[inline(always)]
+    pub fn text<'text>(&self, source_text: &'text str) -> Option<&'text str> {
+        self.span.text(source_text)
+    }
+
     fn is_whitespace(&self) -> bool {
         self.kind == TokenKind::Whitespace
             || self.kind == TokenKind::EndOfLine
@@ -127,11 +136,11 @@ impl Token {
 
     fn is_keyword(&self) -> bool {
         match self.kind {
-            TokenKind::True
-          | TokenKind::Yes
-          | TokenKind::False
-          | TokenKind::No => true,
-          _ => false
+              TokenKind::True
+            | TokenKind::Yes
+            | TokenKind::False
+            | TokenKind::No => true,
+            _ => false
         }
     }
 }
@@ -487,7 +496,22 @@ impl<'text> Tokenizer<'text> {
     }
 
     /// Returns the span of the current token in the source file
+    ///
+    /// # Panics
+    /// This function will panic if either of `self.token_start` or
+    /// `self.token_end_exclusive` are not on character boundaries
+    /// as defined by `str::is_char_boundary`
     fn token_span(&self) -> FileSpan {
+        assert!(
+            self.text.is_char_boundary(self.token_start.to_usize()),
+            "field `token_start` must be on a char boundary"
+        );
+
+        assert!(
+            self.text.is_char_boundary(self.token_end_exclusive.to_usize()),
+            "field `token_end_exclusive` must be on a char boundary"
+        );
+
         self.span(self.token_start, self.token_end_exclusive)
     }
 }
@@ -507,3 +531,6 @@ impl<'text> Iterator for Tokenizer<'text> {
         opt_token
     }
 }
+
+#[cfg(test)]
+mod tests;

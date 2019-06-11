@@ -8,7 +8,7 @@
             "runtimeExecutable": "${execPath}",
             "args": [ "--extensionDevelopmentPath=${workspaceRoot}/editors/vscode" ],
             "outFiles": [ "editors/vscode/out/**/*.js" ],
-            "preLaunchTask": "Build VSCode LSP Client Extension"
+            "preLaunchTask": "Build all"
         },
     ]
 }

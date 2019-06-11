@@ -56,7 +56,7 @@ this_script_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd
 profile="debug"
 
 # the name of the executable to intercept I/O for
-exe_name="oraide-language-server"
+exe_name="ora"
 
 # the absolute path of the executable to intercept I/O for
 abs_exe_path="$(dirname "${this_script_dir}")" # go up one level into `oraide-language-server`

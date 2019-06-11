@@ -128,11 +128,67 @@ impl<TSource: Copy + fmt::Debug> Span<TSource> {
         let byte_index = byte_index.into();
         self.start <= byte_index && byte_index < self.end_exclusive
     }
+
+    /// Determine whether this span contains `span`
+    pub fn contains_span(&self, span: Self) -> bool {
+        if !self.contains(span.start().to_usize()) {
+            return false;
+        }
+
+        if !self.contains(span.end_exclusive().to_usize() - 1) {
+            return false;
+        }
+
+        true
+    }
+
+    /// Get the text slice of this span
+    ///
+    /// # Returns
+    /// - `None` if either of the components of this span lie outside of
+    ///   `source_text` or are not on valid character boundaries
+    /// - `Some(_)` otherwise
+    pub fn text<'text>(&self, source_text: &'text str) -> Option<&'text str> {
+        let start = self.start.to_usize();
+        if !source_text.is_char_boundary(start) {
+            return None;
+        }
+
+        let end_exclusive = self.end_exclusive.to_usize();
+        if !source_text.is_char_boundary(end_exclusive) {
+            return None;
+        }
+
+        Some(&source_text[start..end_exclusive])
+    }
 }
 
 #[cfg(test)]
 mod tests {
     use crate::*;
+
+    /// Compute the `ByteIndex` of the `n`-th (1-based) `ch` in `s`
+    ///
+    /// # Example
+    /// ```rust
+    /// let idx_of_2nd_n = byte_index_of_nth_char_in_str(2, 'n', "Name: McKenna");
+    /// ```
+    fn byte_index_of_nth_char_in_str(n: usize, ch: char, s: &str) -> ByteIndex {
+        assert!(n > 0, "n={}", n);
+        assert!(n < s.len(), "n={} < s.len()={}", n, s.len());
+
+        let idx = s
+            .match_indices(ch)
+            .nth(n - 1) // `nth` is 0-based (https://doc.rust-lang.org/std/iter/trait.Iterator.html#method.nth)
+            .map(|(idx, _)| idx)
+            .expect(&format!(
+                "TEST LOGIC ERROR: {}({}, {}, {:?})",
+                stringify!(byte_index_of_nth_char_in_str),
+                n, ch, s
+            ));
+
+        ByteIndex::from(idx)
+    }
 
     #[test]
     fn contains() {
@@ -155,5 +211,49 @@ mod tests {
         let span = Span::from_str(FileId(0), "Hello: World");
         let out_of_bounds = ByteIndex::from(span.end_exclusive().to_usize() + 1);
         assert!(!span.contains(out_of_bounds));
+    }
+
+    #[test]
+    fn text() {
+        // Arrange
+        let input = "foo bar baz";
+        let span = {
+            let start = byte_index_of_nth_char_in_str(1, 'b', input);
+            let end_exclusive = byte_index_of_nth_char_in_str(1, 'r', input) + 1.into();
+
+            FileSpan::new(FileId(0), start, end_exclusive)
+        };
+
+        // Act
+        let opt_text = span.text(input);
+
+        // Assert
+        assert_eq!(opt_text, Some("bar"));
+    }
+
+    #[test]
+    fn text_invalid_start() {
+        // Arrange
+        let input = "ÿ";
+        let span = FileSpan::new(FileId(0), 0, 1); // `[0, 2)` would be valid
+
+        // Act
+        let opt_text = span.text(input);
+
+        // Assert
+        assert_eq!(opt_text, None);
+    }
+
+    #[test]
+    fn text_invalid_end_exclusive() {
+        // Arrange
+        let input = "ÿ";
+        let invalid_span = FileSpan::new(FileId(0), 1, 2);
+
+        // Act
+        let opt_text = invalid_span.text(input);
+
+        // Assert
+        assert_eq!(opt_text, None);
     }
 }

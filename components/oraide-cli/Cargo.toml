@@ -7,7 +7,9 @@ edition = "2018"
 
 [dependencies]
 oraide-span = { path = "../oraide-span" }
+oraide-actor = { path = "../oraide-actor" }
 oraide-query-system = { path = "../oraide-query-system" }
 oraide-parser-miniyaml = { path = "../oraide-parser-miniyaml" }
+oraide-language-server = { path = "../oraide-language-server" }
 inventory = "^0.1"
 walkdir = "2.2.7"

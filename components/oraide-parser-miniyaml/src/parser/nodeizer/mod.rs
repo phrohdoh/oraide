@@ -121,7 +121,6 @@ impl Node {
         self.indentation_token.as_ref().map_or(0, |token| token.span.len().to_usize())
     }
 
-    // TODO: Change this to return `Option<Span<_>>`
     pub fn span(&self) -> Option<FileSpan> {
         if self.is_empty() {
             return None;
@@ -188,6 +187,41 @@ impl Node {
             _ => return None,
         })
     }
+
+    //// Compute the single [`Token`] that contains the given `span`, if any
+    // pub fn token_containing_span(&self, span: FileSpan) -> Option<Token> {
+    //     if let Some(cmp_span) = self.indentation_token.clone().map(|token| token.span) {
+    //         if cmp_span.contains_span(span) {
+    //             return self.indentation_token.clone();
+    //         }
+    //     }
+
+    //     for shrd_key_token in self.key_tokens.iter() {
+    //         if shrd_key_token.span.contains_span(span) {
+    //             return Some(shrd_key_token.clone());
+    //         }
+    //     }
+
+    //     if let Some(cmp_span) = self.key_terminator_token.clone().map(|token| token.span) {
+    //         if cmp_span.contains_span(span) {
+    //             return self.key_terminator_token.clone();
+    //         }
+    //     }
+
+    //     for shrd_value_token in self.value_tokens.iter() {
+    //         if shrd_value_token.span.contains_span(span) {
+    //             return Some(shrd_value_token.clone());
+    //         }
+    //     }
+
+    //     if let Some(cmp_span) = self.comment_token.clone().map(|token| token.span) {
+    //         if cmp_span.contains_span(span) {
+    //             return self.comment_token.clone();
+    //         }
+    //     }
+
+    //     None
+    // }
 }
 
 /// Transform a collection of [`Token`]s into a collection of [`Node`]s

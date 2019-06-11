@@ -22,7 +22,7 @@ import {
     RevealOutputChannelOn,
 } from 'vscode-languageclient';
 
-const DEFAULT_SERVER_EXE_NAME: string = 'oraide-language-server';
+const DEFAULT_SERVER_EXE_NAME: string = 'ora';
 const workspaces: Map<Uri, ClientWorkspace> = new Map();
 
 export async function activate(ctx: ExtensionContext) {
@@ -43,7 +43,7 @@ function didOpenTextDocument(document: TextDocument, ctx: ExtensionContext) {
     const dir = workspace.getWorkspaceFolder(uri);
 
     if (!dir) {
-        console.error(`WorkspaceFolder \`${uri}\` could not be found`);
+        console.warn(`A workspace folder for \`${uri}\` could not be found`);
         return;
     }
 
@@ -133,7 +133,7 @@ class ClientWorkspace {
         const serverExePath = this.serverConfig.exePath || DEFAULT_SERVER_EXE_NAME;
 
         const cwd = this.dirFsPath;
-        const serverProcess = spawn(serverExePath, [], { cwd });
+        const serverProcess = spawn(serverExePath, ['ide'], { cwd });
 
         serverProcess.on('error', (err: { code?: string; message: string }) => {
             if (err.code === 'ENOENT') {
