@@ -45,11 +45,11 @@ The value of this item:
 You might change this for numerous reasons, such as (but not limited to):
 - general logging
 - debugging the server by `tee`-ing input and output
-- using `oraide_language_server`'s behaviour as a reference for your own language server implementation
+- using `oraide_language_server`'s behavior as a reference for your own language server implementation
 - simply using a different server implementation (maybe you're writing an `oraide_language_server` competitor :O)
 
 ### `oraide.trace.server`
 
 The value of this item:
 - must be one of `messages`, `off`, or `verbose`
-- will determine whether the client (the VSCode extenion) logs all messages to and from the server in the _Output_ viewlet (which you can read more about [here](https://code.visualstudio.com/docs/editor/debugging))
+- will determine whether the client (the VSCode extension) logs all messages to and from the server in the _Output_ viewlet (which you can read more about [here](https://code.visualstudio.com/docs/editor/debugging))
