@@ -26,6 +26,17 @@ $ cat package.json | jq -r '.scripts."install-ext"'
 
 You should now be able to find an extension named _OpenRA IDE_ in your VSCode _extensions_ viewlet's _enabled_ section.
 
+## Extensions to pair this one with
+
+[indent-rainbow](https://marketplace.visualstudio.com/items?itemName=oderwat.indent-rainbow)
+can help you spot those pesky instances of invalid indentation quicker
+
+[omnisharp-vscode](https://marketplace.visualstudio.com/items?itemName=ms-vscode.csharp)
+is the de facto extension for .NET / C# work (if you're writing custom traits)
+
+If you think users would benefit from listing another extension here please
+[open a ticket suggesting another extension]!
+
 ## Development
 
 ### Requirements
@@ -62,6 +73,8 @@ You should now have a `./out/oraide.vsix` file which you can [install with a cus
 
 Read [./docs/dev/architecture.md](./docs/dev/architecture.md) for an overview of the extension's architecture.
 
-### Testing (manual & autmated)
+### Testing (manual & automated)
 
 TODO
+
+[open a ticket suggesting another extension]: https://github.com/Phrohdoh/oraide/issues/new?title=VSCode%20Extension%20Request:%20Link%20to%20extension%20`NAME-HERE`&body=\<!--%20please%20replace%20NAME-HERE%20in%20the%20title%20and%20add%20a%20link%20to%20the%20extension%20in%20the%20body%20--\>
