@@ -36,6 +36,13 @@
         "configuration": "./language-configuration.json"
       }
     ],
+    "grammars": [
+      {
+        "language": "miniyaml",
+        "scopeName": "source.miniyaml",
+        "path": "./syntaxes/miniyaml.tmLanguage.json"
+      }
+    ],
     "commands": [
       {
         "command": "oraide.server.restart",
@@ -58,6 +65,11 @@
           "default": "off",
           "scope": "window"
         },
+        "oraide.server.exeArgs": {
+          "type": "array",
+          "default": "oraide-language-server",
+          "description": "Language server executable arguments"
+        },
         "oraide.server.exePath": {
           "type": "string",
           "default": "oraide-language-server",
@@ -66,7 +78,7 @@
         "oraide.server.shouldLogToFile": {
           "type": "boolean",
           "default": false,
-          "description": "When set to `true` the language server's stderr is logged to a file at workspace root level.  Requires reloading extension after changing."
+          "description": "When set to `true` the language server's stderr is logged to a file in `<workspace root>/.oraide/logs/`.  Requires reloading extension after changing."
         }
       }
     }
