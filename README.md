@@ -7,7 +7,7 @@ A collection of tools with the aim of lowering the barrier to entry for OpenRA-b
 <details>
 <summary>Hovering over a trait property on an actor</summary>
 
-![vscode-hover](./images/vscode-extension-a65f152.png)
+![vscode-hover](./images/vscode-extension-5c66582.png)
 </details>
 
 ## License
@@ -20,7 +20,7 @@ See the [LICENSE](./LICENSE) file.
 
 **MiniYaml**: OpenRA's custom configuration language which hijacked the `.yaml` extension (note: it **is not** valid [YAML](https://yaml.org/spec/1.2/spec.html))
 
-**SDK ([link](https://github.com/OpenRA/OpenRAModSDK/))**: The official template for OpenRA-based games that comes bundled with utilitiy scripts
+**SDK ([link](https://github.com/OpenRA/OpenRAModSDK/))**: The official template for OpenRA-based games that comes bundled with utility scripts
 
 **LSP ([link](https://microsoft.github.io/language-server-protocol/specification))**: The _Language Server Protocol_ spearheaded by Microsoft
 
