@@ -198,9 +198,12 @@ pub fn lsp_serve(send_to_query_channel: Sender<QueryRequest>) {
                     let message = serde_json::from_str::<LspMessage>(&buffer_string);
 
                     match message {
-                        Ok(LspMessage::Initialize { id: task_id, .. }) => {
+                        Ok(LspMessage::Initialize { id: task_id, params }) => {
                             let _ = send_to_query_channel.send(
-                                QueryRequest::Initialize { task_id }
+                                QueryRequest::Initialize {
+                                    task_id,
+                                    workspace_root_url: params.root_uri,
+                                }
                             );
                         },
                         Ok(LspMessage::Initialized) => {

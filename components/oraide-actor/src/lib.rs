@@ -20,7 +20,6 @@ use url::Url;
 
 use languageserver_types::{
     Position as LsPos,
-    Range,
 };
 
 pub type TaskId = usize;
@@ -29,6 +28,7 @@ pub type TaskId = usize;
 pub enum QueryRequest {
     Initialize {
         task_id: TaskId,
+        workspace_root_url: Option<Url>,
     },
     HoverAtPosition {
         task_id: TaskId,

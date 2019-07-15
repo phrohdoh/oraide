@@ -27,9 +27,40 @@ use oraide_parser_miniyaml::{
 mod lang_server;
 pub use lang_server::{
     LangServerCtx,
+    LangServerCtxStorage,
     Markdown,
-    LsPos,
 };
+
+mod query_definitions;
+
+/// Position in a text document expressed as zero-based line and character offset.
+/// A position is between two characters like an 'insert' cursor in a editor.
+#[derive(Debug, Eq, PartialEq, Ord, PartialOrd, Copy, Clone, Default, Hash)]
+pub struct Position {
+    /// 0-based
+    pub line_idx: usize,
+
+    /// 0-based
+    pub character_idx: usize,
+}
+
+impl Position {
+    pub fn new(line_idx: usize, character_idx: usize) -> Self {
+        Self {
+            line_idx,
+            character_idx,
+        }
+    }
+}
+
+impl From<languageserver_types::Position> for Position {
+    fn from(pos: languageserver_types::Position) -> Self {
+        Self {
+            line_idx: pos.line as usize,
+            character_idx: pos.character as usize,
+        }
+    }
+}
 
 /// Entrypoint into MiniYaml parsing
 ///
@@ -48,7 +79,7 @@ pub use lang_server::{
 /// let file_id = db.add_file("example.yaml", "Hello:\n");
 /// let tree: Tree = db.file_tree(file_id);
 /// ```
-#[salsa::database(ParserCtxStorage)]
+#[salsa::database(ParserCtxStorage, LangServerCtxStorage)]
 pub struct Database {
     rt: salsa::Runtime<Self>,
 }
@@ -81,6 +112,7 @@ impl ParallelDatabase for Database {
 }
 
 pub struct QuerySystem {
+    /// The channel used to send messages to a client
     send_channel: Sender<QueryResponse>,
     db: Database,
     needs_run_diags: bool,
@@ -125,9 +157,14 @@ impl QuerySystem {
 
     fn process_message(&mut self, message: QueryRequest) {
         match message {
-            QueryRequest::Initialize { task_id } => {
+            QueryRequest::Initialize { task_id, workspace_root_url } => {
                 let chan = self.send_channel.clone();
                 send(chan, QueryResponse::AckInitialize { task_id });
+
+                if let Some(workspace_root_path) = workspace_root_url.and_then(|url| url.to_file_path().ok()) {
+                    let dot_dir_path = workspace_root_path.join(".oraide");
+                    self.db.set_dot_dir_path(dot_dir_path.into());
+                }
             },
             QueryRequest::HoverAtPosition { task_id, file_url, file_pos } => {
                 thread::spawn({
@@ -135,7 +172,7 @@ impl QuerySystem {
                     let chan = self.send_channel.clone();
 
                     move || {
-                        match db.hover_with_file_name(file_url.as_str(), file_pos) {
+                        match db.hover_with_file_name(file_url.to_string(), file_pos.into()) {
                             Some(md) => send(chan, QueryResponse::HoverData {
                                 task_id, 
                                 data: md.0,
