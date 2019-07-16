@@ -37,6 +37,10 @@ Let's go over these in detail.
 
 ### `oraide.server.shouldLogToFile`
 
+> NOTE: This configuration item is _entirely optional_, if this section doesn't
+make sense to you then you don't want to include this in your `settings.json`
+(unless an _OpenRA IDE_ developer is helping you troubleshoot).
+
 The value of this item:
 - must be a boolean (either `true` or `false`)
 - will determine whether the server writes logs to a file named
@@ -67,8 +71,8 @@ The value of this item:
 You might change this for numerous reasons, such as (but not limited to):
 - general logging
 - debugging the server by `tee`-ing input and output
-- using `oraide_language_server`'s behavior as a reference for your own language
-server implementation
+- using `ora`'s behavior as a reference for your own language server
+implementation
 - simply using a different server implementation (maybe you're writing an `ora`
 competitor :O)
 
@@ -126,6 +130,10 @@ If you aren't setting `oraide.server.exePath` you can essentially ignore the
 previous statement and pretend you never read it.
 
 ### `oraide.trace.server`
+
+> NOTE: This configuration item is _entirely optional_, if this section doesn't
+make sense to you then you don't want to include this in your `settings.json`
+(unless an _OpenRA IDE_ developer is helping you troubleshoot).
 
 The value of this item:
 - must be one of `messages`, `off`, or `verbose`
