@@ -40,9 +40,9 @@ Let's go over these in detail.
 The value of this item:
 - must be a boolean (either `true` or `false`)
 - will determine whether the server writes logs to a file named
-`oraide-<timestamp>.log` in your VSCode workspace root
+`<local timestamp of server start>.log` in `<workspace root>/.oraide/logs/`
 
-If you have experiencing issues with _OpenRA IDE_ please set this value to
+If you experience issues with _OpenRA IDE_ please set this value to
 `true`, restart VSCode, perform some actions (such as hovering over one of an
 actor's traits in your MiniYaml), and read the newest log file created.
 
