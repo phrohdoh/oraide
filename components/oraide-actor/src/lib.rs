@@ -22,6 +22,13 @@ use languageserver_types::{
     Position as LsPos,
 };
 
+mod ls_types;
+pub use ls_types::{
+    Position,
+    Range,
+    RangedFilePosition,
+};
+
 pub type TaskId = usize;
 
 #[derive(Debug)]
@@ -31,6 +38,11 @@ pub enum QueryRequest {
         workspace_root_url: Option<Url>,
     },
     HoverAtPosition {
+        task_id: TaskId,
+        file_url: Url,
+        file_pos: LsPos,
+    },
+    GoToDefinition {
         task_id: TaskId,
         file_url: Url,
         file_pos: LsPos,
@@ -46,7 +58,8 @@ impl QueryRequest {
         match self {
             QueryRequest::Initialize { .. }
             | QueryRequest::FileOpened { .. } => true,
-            QueryRequest::HoverAtPosition { .. } => false,
+            QueryRequest::HoverAtPosition { .. }
+            | QueryRequest::GoToDefinition { .. }  => false,
         }
     }
 }
@@ -59,6 +72,10 @@ pub enum QueryResponse {
         task_id: TaskId,
         data: String,
     },
+    Definition {
+        task_id: TaskId,
+        ranged_file_position: Option<RangedFilePosition>,
+    }
 }
 
 /// An actor in the task system.  This gives us a uniform way to
@@ -74,8 +91,8 @@ pub trait Actor {
     ///
     /// The intended workflow is as follows:
     ///
-    /// - If desired, inspect `messages` and purne messages that become
-    ///   outdated due ot later messages in the queue
+    /// - If desired, inspect `messages` and prune messages that become
+    ///   outdated due to later messages in the queue
     /// - Invoke `messages.pop_front().unwrap()` and process that message
     ///   - In particular, it is probably better to return than to eagerly
     ///     process all messages in the queue, as it gives the actor a chance

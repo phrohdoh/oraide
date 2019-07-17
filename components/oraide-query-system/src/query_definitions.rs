@@ -9,17 +9,25 @@ use std::{
     fs::{
         File,
     },
+    str::{
+        FromStr,
+    },
 };
+
+use url::Url;
 
 use oraide_span::{
     ByteIndex,
     FileId,
 };
 
+use oraide_actor::{
+    Position,
+};
+
 use crate::{
     LangServerCtx,
     Markdown,
-    Position,
     lang_server::types,
 };
 
@@ -66,6 +74,24 @@ pub(crate) fn position_to_byte_index(db: &impl LangServerCtx, file_id: FileId, p
     Some(ByteIndex::from(line_start + pos.character_idx))
 }
 
+pub(crate) fn byte_index_to_position(db: &impl LangServerCtx, file_id: FileId, byte_index: ByteIndex) -> Option<Position> {
+    let byte_index = byte_index.to_usize();
+
+    // Get all byte indices of line starts
+    let line_offsets = db.line_offsets(file_id);
+
+    // Find the line offset just _before_ the byte index (containing the index)
+    let line_idx = line_offsets.iter().position(|idx| *idx > byte_index)? - 1;
+
+    // Byte index minus the starting index of the containing line is the column
+    let character_idx = byte_index - line_offsets[line_idx];
+
+    Some(Position {
+        line_idx,
+        character_idx,
+    })
+}
+
 pub(crate) fn hover_with_file_name(db: &impl LangServerCtx, file_name: String, pos: Position) -> Option<Markdown> {
     let file_id = match db.file_name_to_file_id(file_name.to_owned()) {
         Some(fid) => fid,
@@ -98,4 +124,40 @@ pub(crate) fn hover_with_file_id(db: &impl LangServerCtx, file_id: FileId, pos: 
     let joined_doc_string = doc_lines.join("\n");
 
     return Some(joined_doc_string.into());
+}
+
+/// Compute the definition of a symbol at `position` in `file_name`
+pub(crate) fn definition_with_file_name(db: &impl LangServerCtx, file_name: String, pos: Position) -> Option<(Url, Position, Position)> {
+    let file_id = match db.file_name_to_file_id(file_name.to_owned()) {
+        Some(fid) => fid,
+        _ => {
+            eprintln!("No file id found for file name `{}`", file_name);
+            return None;
+        },
+    };
+
+    db.definition_with_file_id(file_id, pos)
+}
+
+/// Compute the definition of a symbol at `position` in file with id `file_id`
+pub(crate) fn definition_with_file_id(db: &impl LangServerCtx, file_id: FileId, pos: Position) -> Option<(Url, Position, Position)> {
+    let file_text = db.file_text(file_id);
+    let byte_index = db.position_to_byte_index(file_id, pos)?;
+    let token = db.token_spanning_byte_index(file_id, byte_index)?;
+    let token_text = token.text(&file_text)?;
+
+    let trimmed_token_text = token_text.trim();
+
+    // If there is nothing under the caret then we have nothing to look up
+    if trimmed_token_text.is_empty() {
+        return None;
+    }
+
+    let def_span = db.file_definition_span(file_id, trimmed_token_text.to_owned())?;
+    let def_file_name = db.file_name(def_span.source());
+    let def_file_url = Url::from_str(&def_file_name).ok()?;
+    let start_pos = db.byte_index_to_position(file_id, def_span.start())?;
+    let end_exclusive_pos = db.byte_index_to_position(file_id, def_span.end_exclusive())?;
+
+    (def_file_url, start_pos, end_exclusive_pos).into()
 }

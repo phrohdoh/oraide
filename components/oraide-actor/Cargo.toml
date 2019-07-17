@@ -6,4 +6,5 @@ edition = "2018"
 
 [dependencies]
 languageserver-types = "^0.54"
-url = "^1.7"
+url = { version = "^1.7", features = [ "serde" ] }
+serde = { version = "1.0", features = [ "derive" ] }

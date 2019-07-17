@@ -10,6 +10,8 @@ use derive_more::{
     From,
 };
 
+use url::Url;
+
 use oraide_parser_miniyaml::{
     ParserCtx,
 };
@@ -19,9 +21,12 @@ use oraide_span::{
     FileId,
 };
 
+use oraide_actor::{
+    Position,
+};
+
 use crate::{
     query_definitions,
-    Position,
 };
 
 pub(crate) mod types;
@@ -59,6 +64,9 @@ pub trait LangServerCtx: ParserCtx {
     #[salsa::invoke(query_definitions::position_to_byte_index)]
     fn position_to_byte_index(&self, file_id: FileId, pos: Position) -> Option<ByteIndex>;
 
+    #[salsa::invoke(query_definitions::byte_index_to_position)]
+    fn byte_index_to_position(&self, file_id: FileId, byte_index: ByteIndex) -> Option<Position>;
+
     /// Compute the hover data for a [`Position`] in `file_name`
     ///
     /// [`Position`]: struct.Position.html
@@ -70,4 +78,12 @@ pub trait LangServerCtx: ParserCtx {
     /// [`Position`]: struct.Position.html
     #[salsa::invoke(query_definitions::hover_with_file_id)]
     fn hover_with_file_id(&self, file_id: FileId, pos: Position) -> Option<Markdown>;
+
+    /// Compute the definition of a symbol at `position` in `file_name`
+    #[salsa::invoke(query_definitions::definition_with_file_name)]
+    fn definition_with_file_name(&self, file_name: String, pos: Position) -> Option<(Url, Position, Position)>;
+
+    /// Compute the definition of a symbol at `position` in file with id `file_id`
+    #[salsa::invoke(query_definitions::definition_with_file_id)]
+    fn definition_with_file_id(&self, file_id: FileId, pos: Position) -> Option<(Url, Position, Position)>;
 }

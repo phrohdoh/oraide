@@ -47,6 +47,12 @@ pub enum LspMessage {
         params: languageserver_types::TextDocumentPositionParams,
     },
 
+    #[serde(rename = "textDocument/definition")]
+    TextDocDefinition {
+        id: usize,
+        params: languageserver_types::TextDocumentPositionParams,
+    },
+
     #[serde(rename = "$/cancelRequest")]
     CancelRequest {
         params: languageserver_types::CancelParams,
@@ -83,7 +89,7 @@ impl Actor for LspResponder {
                         hover_provider: Some(true),
                         completion_provider: None,
                         signature_help_provider: None,
-                        definition_provider: Some(false),
+                        definition_provider: Some(true),
                         type_definition_provider: None,
                         implementation_provider: None,
                         references_provider: Some(false),
@@ -112,6 +118,35 @@ impl Actor for LspResponder {
                     ),
                     range: None,
                 });
+            },
+            QueryResponse::Definition { task_id, ranged_file_position } => {
+                match ranged_file_position {
+                    None => send_response(task_id, Option::<languageserver_types::Location>::None),
+                    Some(ranged_file_position) => {
+                        let start_pos = {
+                            let start = ranged_file_position.range.start;
+                            languageserver_types::Position::new(start.line_idx as u64, start.character_idx as u64)
+                        };
+
+                        let end_exclusive_pos = {
+                            let end_exclusive = ranged_file_position.range.end_exclusive;
+                            languageserver_types::Position::new(end_exclusive.line_idx as u64, end_exclusive.character_idx as u64)
+                        };
+
+
+                        let range = languageserver_types::Range::new(
+                            start_pos,
+                            end_exclusive_pos
+                        );
+
+                        let location = languageserver_types::Location::new(
+                            ranged_file_position.file_url,
+                            range,
+                        );
+
+                        send_response(task_id, location);
+                    },
+                }
             },
         }
     }
@@ -220,6 +255,13 @@ pub fn lsp_serve(send_to_query_channel: Sender<QueryRequest>) {
                         Ok(LspMessage::TextDocDidChange { .. }) => { },
                         Ok(LspMessage::TextDocHover { id: task_id, params }) => {
                             let _ = send_to_query_channel.send(QueryRequest::HoverAtPosition {
+                                task_id,
+                                file_url: params.text_document.uri,
+                                file_pos: params.position,
+                            });
+                        },
+                        Ok(LspMessage::TextDocDefinition { id: task_id, params }) => {
+                            let _ = send_to_query_channel.send(QueryRequest::GoToDefinition {
                                 task_id,
                                 file_url: params.text_document.uri,
                                 file_pos: params.position,

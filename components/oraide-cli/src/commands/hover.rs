@@ -4,11 +4,14 @@ use oraide_span::{
     FileId,
 };
 
+use oraide_actor::{
+    Position,
+};
+
 use oraide_query_system::{
     Database,
     LangServerCtx,
     Markdown,
-    Position,
 };
 
 pub(crate) struct Hover {

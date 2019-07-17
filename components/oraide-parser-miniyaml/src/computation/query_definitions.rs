@@ -32,6 +32,7 @@ pub(crate) fn file_name_to_file_id(db: &impl ParserCtx, file_name: String) -> Op
     None
 }
 
+/// Compute all line start offsets in byte indices
 pub(crate) fn line_offsets(db: &impl ParserCtx, file_id: FileId) -> Vec<usize> {
     let text = &db.file_text(file_id);
     let mut acc = 0;
@@ -122,6 +123,8 @@ pub(crate) fn all_definitions(db: &impl ParserCtx) -> Vec<(FileId, Vec<Node>)> {
 
 /// Find a definition with name `def_name` and return its span.
 pub(crate) fn file_definition_span(db: &impl ParserCtx, file_id: FileId, def_name: String) -> Option<FileSpan> {
+    log::warn!("Looking for def of `{}` in `{:?}`", def_name, file_id);
+
     let text = db.file_text(file_id);
     let defs = db.file_definitions(file_id);
 
