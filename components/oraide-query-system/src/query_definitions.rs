@@ -153,11 +153,29 @@ pub(crate) fn definition_with_file_id(db: &impl LangServerCtx, file_id: FileId, 
         return None;
     }
 
-    let def_span = db.file_definition_span(file_id, trimmed_token_text.to_owned())?;
-    let def_file_name = db.file_name(def_span.source());
-    let def_file_url = Url::from_str(&def_file_name).ok()?;
-    let start_pos = db.byte_index_to_position(file_id, def_span.start())?;
-    let end_exclusive_pos = db.byte_index_to_position(file_id, def_span.end_exclusive())?;
+    // TODO: Search all documents, not just the open ones
+    for fid in db.all_file_ids() {
+        if let Some(def_span) = db.file_definition_span(fid, trimmed_token_text.to_owned()) {
+            let def_file_name = db.file_name(def_span.source());
 
-    (def_file_url, start_pos, end_exclusive_pos).into()
+            let def_file_url = match Url::from_str(&def_file_name).ok() {
+                Some(url) => url,
+                _ => continue,
+            };
+
+            let start_pos = match db.byte_index_to_position(fid, def_span.start()) {
+                Some(pos) => pos,
+                _ => continue,
+            };
+
+            let end_exclusive_pos = match db.byte_index_to_position(fid, def_span.end_exclusive()) {
+                Some(pos) => pos,
+                _ => continue,
+            };
+
+            return (def_file_url, start_pos, end_exclusive_pos).into();
+        }
+    }
+
+    None
 }
