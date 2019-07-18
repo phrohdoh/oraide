@@ -9,11 +9,13 @@ use std::{
 };
 
 use salsa::{
+    Database as _,
     ParallelDatabase,
     Snapshot,
 };
 
 use oraide_actor::{
+    Position,
     RangedFilePosition,
     Actor,
     QueryRequest,
@@ -21,6 +23,7 @@ use oraide_actor::{
 };
 
 use oraide_parser_miniyaml::{
+    ParserCtx,
     ParserCtxExt,
     ParserCtxStorage,
 };
@@ -183,6 +186,27 @@ impl QuerySystem {
             QueryRequest::FileOpened { file_url, file_text } => {
                 // TODO: How will we handle duplicates?
                 let _ = self.db.add_file(file_url.as_str(), file_text);
+            },
+            QueryRequest::FileChanged { file_url, changes } => {
+                let file_id = self.db.file_name_to_file_id(file_url.to_string()).unwrap();
+                let mut current_contents = self.db.file_text(file_id);
+
+                for change in changes {
+                    let start_offset = self.db.position_to_byte_index(
+                        file_id,
+                        Position::from(change.0.start),
+                    ).unwrap();
+
+                    let end_offset = self.db.position_to_byte_index(
+                        file_id,
+                        Position::from(change.0.end),
+                    ).unwrap();
+
+                    current_contents.drain(start_offset.to_usize()..end_offset.to_usize());
+                    current_contents.insert_str(start_offset.to_usize(), &change.1);
+                }
+
+                self.db.set_file_text(file_id, current_contents);
             },
         }
     }

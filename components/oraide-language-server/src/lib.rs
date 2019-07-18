@@ -252,7 +252,16 @@ pub fn lsp_serve(send_to_query_channel: Sender<QueryRequest>) {
                                 }
                             );
                         },
-                        Ok(LspMessage::TextDocDidChange { .. }) => { },
+                        Ok(LspMessage::TextDocDidChange { params }) => {
+                            let _ = send_to_query_channel.send(QueryRequest::FileChanged {
+                                file_url: params.text_document.uri,
+                                changes: params
+                                    .content_changes
+                                    .into_iter()
+                                    .map(|x| (x.range.unwrap(), x.text))
+                                    .collect(),
+                            });
+                        },
                         Ok(LspMessage::TextDocHover { id: task_id, params }) => {
                             let _ = send_to_query_channel.send(QueryRequest::HoverAtPosition {
                                 task_id,

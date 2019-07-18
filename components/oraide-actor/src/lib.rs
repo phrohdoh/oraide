@@ -20,6 +20,7 @@ use url::Url;
 
 use languageserver_types::{
     Position as LsPos,
+    Range as LsRange,
 };
 
 mod ls_types;
@@ -51,15 +52,22 @@ pub enum QueryRequest {
         file_url: Url,
         file_text: String,
     },
+    FileChanged {
+        file_url: Url,
+        changes: Vec<(LsRange, String)>,
+    },
 }
 
 impl QueryRequest {
     pub fn will_mutate_server_state(&self) -> bool {
         match self {
             QueryRequest::Initialize { .. }
-            | QueryRequest::FileOpened { .. } => true,
+            | QueryRequest::FileOpened { .. }
+            | QueryRequest::FileChanged { .. }
+                => true,
             QueryRequest::HoverAtPosition { .. }
-            | QueryRequest::GoToDefinition { .. }  => false,
+            | QueryRequest::GoToDefinition { .. }
+                => false,
         }
     }
 }
