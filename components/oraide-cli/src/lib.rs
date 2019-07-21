@@ -20,7 +20,7 @@ use oraide_span::{
     FileId,
 };
 
-use oraide_query_system::Database;
+use oraide_query_system::OraideDatabase;
 
 use oraide_parser_miniyaml::{
     ParserCtxExt as _,
@@ -161,7 +161,7 @@ fn print_usage_instructions() {
 /// the newly-created [`FileId`], returning `Err(String)` if something goes wrong.
 ///
 /// [`FileId`]: ../oraide_span/struct.FileId.html
-pub(crate) fn add_file(db: &mut Database, file_path: &Path) -> Result<FileId, String> {
+pub(crate) fn add_file(db: &mut OraideDatabase, file_path: &Path) -> Result<FileId, String> {
     let text = {
         let mut file = File::open(file_path)
             .map_err(|e| format!("Error opening `{}`: {}", file_path.display(), e))?;

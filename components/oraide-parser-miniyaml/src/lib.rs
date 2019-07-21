@@ -10,10 +10,10 @@
 //! //
 //! ```
 //!
-//! See [`Database`] docs for an example with [`oraide-query-system`]
+//! See [`OraideDatabase`] docs for an example with [`oraide-query-system`]
 //!
 //! [`oraide-query-system`]: ../oraide_query_system/index.html
-//! [`Database`]: ../oraide_query_system/struct.Database.html
+//! [`OraideDatabase`]: ../oraide_query_system/struct.OraideDatabase.html
 
 mod parser;
 pub use parser::{

@@ -8,7 +8,7 @@ use oraide_parser_miniyaml::{
     ParserCtxExt,
 };
 
-use crate::Database;
+use crate::OraideDatabase;
 
 /// Compute the `ByteIndex` of the `n`-th (1-based) `ch` in `s`
 ///
@@ -36,7 +36,7 @@ fn byte_index_of_nth_char_in_str(n: usize, ch: char, s: &str) -> ByteIndex {
 #[test]
 fn token_spanning_byte_index() {
     // Arrange
-    let mut db = Database::default();
+    let mut db = OraideDatabase::default();
     let text = "E1:\n\tTooltip:\n\t\tName: Standard Infantry\n";
     let file_id = db.add_file("test-file", text.clone());
 
@@ -59,7 +59,7 @@ fn token_spanning_byte_index() {
 #[test]
 fn node_spanning_byte_index() {
     // Arrange
-    let mut db = Database::default();
+    let mut db = OraideDatabase::default();
     let text = "E1:\n\tTooltip:\n\t\tName: Standard Infantry\n";
     let file_id = db.add_file("test-file", text.clone());
 

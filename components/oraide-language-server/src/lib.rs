@@ -320,7 +320,7 @@ mod tests {
     #[test]
     fn position_to_byte_index() {
         // Arrange
-        let mut db = Database::default();
+        let mut db = OraideDatabase::default();
         let text = "E1:\n\tTooltip:\n\t\tName: Standard Infantry\n";
         let file_id = db.add_file("test-file", text.clone());
 

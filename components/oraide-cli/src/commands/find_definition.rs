@@ -10,7 +10,7 @@ use std::{
 
 use oraide_span::FileId;
 
-use oraide_query_system::Database;
+use oraide_query_system::OraideDatabase;
 
 use oraide_parser_miniyaml::{
     ParserCtx as _,
@@ -19,12 +19,12 @@ use oraide_parser_miniyaml::{
 pub(crate) struct FindDefinition {
     name_to_find: String,
     file_ids: Vec<FileId>,
-    db: Database,
+    db: OraideDatabase,
 }
 
 impl FindDefinition {
     pub(crate) fn new(name_to_find: String, project_root_dir: PathBuf) -> Result<Self, String> {
-        let mut db = Database::default();
+        let mut db = OraideDatabase::default();
 
         let dir_walker = walkdir::WalkDir::new(&project_root_dir)
             .into_iter()

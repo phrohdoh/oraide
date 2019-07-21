@@ -46,19 +46,19 @@ significant, but the theory stands.
 
 ## How does this package implement this functionality?
 
-This package exports a `Database` type which contains [_memeoized_]
+This package exports a `OraideDatabase` type which contains [_memeoized_]
 computation results.
 
 The [`oraide-parser-miniyaml`] package exports some types for file parsing:
 
-- `ParserCtx`, defines inputs and queries for a `Database`
-- `ParserCtxExt`, helper functions that make using `Database` for parsing
+- `ParserCtx`, defines inputs and queries for a `OraideDatabase`
+- `ParserCtxExt`, helper functions that make using `OraideDatabase` for parsing
 a bit easier
 
 ### Example
 
 ```rust
-use oraide_query_system::Database;
+use oraide_query_system::OraideDatabase;
 
 use oraide_parser_miniyaml::{
     ParserCtx,
@@ -69,7 +69,7 @@ use oraide_parser_miniyaml::{
 // this is *your function*, not implemented in `oraide-parser-miniyaml`
 let file_contents: String = get_contents_of("example.yaml");
 
-let mut db = Database::default();
+let mut db = OraideDatabase::default();
 
 // the first argument is a string used to identify a file by humans,
 // in most cases it will probably be the path to the file

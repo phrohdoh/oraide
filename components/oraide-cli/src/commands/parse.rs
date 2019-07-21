@@ -10,7 +10,7 @@ use std::{
 
 use oraide_span::FileId;
 
-use oraide_query_system::Database;
+use oraide_query_system::OraideDatabase;
 
 use oraide_parser_miniyaml::{
     ParserCtx as _,
@@ -19,12 +19,12 @@ use oraide_parser_miniyaml::{
 
 pub(crate) struct Parse {
     file_ids: Vec<FileId>,
-    db: Database,
+    db: OraideDatabase,
 }
 
 impl Parse {
     pub(crate) fn new(file_paths: Vec<PathBuf>) -> Result<Self, String> {
-        let mut db = Database::default();
+        let mut db = OraideDatabase::default();
 
         let file_ids = file_paths.iter()
             .map(|path| crate::add_file(&mut db, path))

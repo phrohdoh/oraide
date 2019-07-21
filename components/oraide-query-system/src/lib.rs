@@ -9,7 +9,6 @@ use std::{
 };
 
 use salsa::{
-    Database as _,
     ParallelDatabase,
     Snapshot,
 };
@@ -43,29 +42,29 @@ mod query_definitions;
 ///
 /// # Example
 /// ```rust
-/// # use oraide_query_system::Database;
+/// # use oraide_query_system::OraideDatabase;
 /// use oraide_parser_miniyaml::{
 ///     ParserCtx,
 ///     ParserCtxExt,
 ///     Tree,
 /// };
 ///
-/// let mut db = Database::default();
+/// let mut db = OraideDatabase::default();
 /// let file_id = db.add_file("example.yaml", "Hello:\n");
 /// let tree: Tree = db.file_tree(file_id);
 /// ```
 #[salsa::database(ParserCtxStorage, LangServerCtxStorage)]
-pub struct Database {
+pub struct OraideDatabase {
     rt: salsa::Runtime<Self>,
 }
 
-impl salsa::Database for Database {
+impl salsa::Database for OraideDatabase {
     fn salsa_runtime(&self) -> &salsa::Runtime<Self> {
         &self.rt
     }
 }
 
-impl Default for Database {
+impl Default for OraideDatabase {
     fn default() -> Self {
         let mut db = Self {
             rt: salsa::Runtime::default(),
@@ -76,9 +75,9 @@ impl Default for Database {
     }
 }
 
-impl ParserCtxExt for Database {}
+impl ParserCtxExt for OraideDatabase {}
 
-impl ParallelDatabase for Database {
+impl ParallelDatabase for OraideDatabase {
     fn snapshot(&self) -> Snapshot<Self> {
         Snapshot::new(Self {
             rt: self.rt.snapshot(self),
@@ -89,7 +88,7 @@ impl ParallelDatabase for Database {
 pub struct QuerySystem {
     /// The channel used to send messages to a client
     send_channel: Sender<QueryResponse>,
-    db: Database,
+    db: OraideDatabase,
     needs_run_diags: bool,
 }
 
@@ -125,7 +124,7 @@ impl QuerySystem {
     pub fn new(send_channel: Sender<QueryResponse>) -> Self {
         Self {
             send_channel,
-            db: Database::default(),
+            db: OraideDatabase::default(),
             needs_run_diags: false,
         }
     }

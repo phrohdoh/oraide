@@ -126,16 +126,16 @@ pub trait ParserCtxExt: ParserCtx {
         self.set_all_file_ids(Default::default());
     }
 
-    /// Add a file to a [`Database`]
+    /// Add a file to a [`OraideDatabase`]
     ///
-    /// See [`Database`]'s docs for a code example.
+    /// See [`OraideDatabase`]'s docs for a code example.
     ///
     /// # Returns
     /// A newly-created [`FileId`] that uniquely represents this file in a
-    /// [`Database`]
+    /// [`OraideDatabase`]
     ///
     /// [`FileId`]: struct.FileId.html
-    /// [`Database`]: ../oraide_query_system/struct.Database.html
+    /// [`OraideDatabase`]: ../oraide_query_system/struct.OraideDatabase.html
     fn add_file(
         &mut self,
         file_name: impl Into<String>,

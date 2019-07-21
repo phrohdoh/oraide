@@ -9,7 +9,7 @@ use oraide_actor::{
 };
 
 use oraide_query_system::{
-    Database,
+    OraideDatabase,
     LangServerCtx,
     Markdown,
 };
@@ -18,12 +18,12 @@ pub(crate) struct Hover {
     line_idx: usize,
     col_idx: usize,
     file_id: FileId,
-    db: Database,
+    db: OraideDatabase,
 }
 
 impl Hover {
     pub(crate) fn new(file_path: PathBuf, line_idx: usize, col_idx: usize) -> Result<Self, String> {
-        let mut db = Database::default();
+        let mut db = OraideDatabase::default();
 
         let file_id = crate::add_file(&mut db, &file_path)?;
 

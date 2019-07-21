@@ -37,15 +37,15 @@ If the text changed but the tree remains the same then all of `type-checking`'s 
 
 The `oraide-parser-miniyaml` package exports some types that make this simple:
 
-- `Database`, contains memoized computation results
-- `ParserCtx`, defines inputs and queries for a `Database`
-- `ParserCtxExt`, helper functions that make using `Database` a bit easier
+- `OraideDatabase`, contains memoized computation results
+- `ParserCtx`, defines inputs and queries for a `OraideDatabase`
+- `ParserCtxExt`, helper functions that make using `OraideDatabase` a bit easier
 
 ### Example
 
 ```rust
 use oraide_parser_miniyaml::{
-    Database,
+    OraideDatabase,
     ParserCtx,
     ParserCtxExt,
     Tree,
@@ -54,7 +54,7 @@ use oraide_parser_miniyaml::{
 // this is *your function*, not implemented in `oraide-parser-miniyaml`
 let file_contents: String = get_contents_of("example.yaml");
 
-let mut db = Database::default();
+let mut db = OraideDatabase::default();
 
 // the first argument is a string used to identify a file by humans,
 // in most cases it will probably be the path to the file
