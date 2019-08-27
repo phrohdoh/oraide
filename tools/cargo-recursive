@@ -1,0 +1,63 @@
+#!/usr/bin/env bash
+
+################################################################################
+#
+# Usage examples:
+# $ cargo recursive clean # iff containing dir is on $PATH
+# $ ./cargo-recursive clean
+#
+################################################################################
+
+# `LOGGING=true cargo recursive <cmd>`
+LOGGING=${LOGGING:-false}
+
+# From https://stackoverflow.com/a/3162500/3816796
+this_subcommand_name="${0##*-}"
+
+# Use the env var $FD if set, otherwise use `fd` https://github.com/sharkdp/fd
+FD=${FD:-fd}
+FD_ARGS=(
+    "-t" "f"
+    "--no-ignore"
+    "^Cargo.toml$"
+)
+
+# Use the env var $CARGO if set, otherwise use `cargo` https://github.com/rust-lang/cargo
+# (note: when ran via `cargo`, $CARGO is *always* set)
+CARGO=${CARGO:-cargo}
+
+# If this script is invoked like `cargo recursive clean` then set `CARGO_CMD` to `clean`
+CARGO_CMD="${2}"
+
+# If this script is invoked like `./cargo-recursive clean` then set `CARGO_CMD` to `clean`
+[[ -z "${CARGO_CMD}" ]] && CARGO_CMD="${1}"
+
+CARGO_CMD="${CARGO_CMD:?}"
+
+function log() { [[ ${LOGGING} == true ]] && printf "INFO: %s\n" "${@}" 1>&2 ; }
+function err() { printf " ERR: %s\n" "${@}" 1>&2 ; }
+function abort() { err "${@}" ; exit 1 ; }
+
+# No recursion!
+if [[ "${CARGO_CMD}" == "${this_subcommand_name}" ]]; then
+    abort "command must not be \`${this_subcommand_name}\`"
+fi
+
+_x_missing_required_executable() {
+    cmd="${1}"
+    [[ -z "${cmd}" ]] && abort '`_x_missing_required_executable` invocation missing required positional argument'
+    abort "missing required executable '${cmd}'"
+}
+
+_x_check_required_executable() {
+    cmd="${1}"
+    [[ -z "${cmd}" ]] && abort '`_x_check_required_executable` invocation missing required positional argument'
+
+    log "checking '${cmd}'"
+    command -v "${cmd}" >/dev/null || _x_missing_required_executable "${cmd}"
+}
+
+_x_check_required_executable "${FD}"
+_x_check_required_executable "${CARGO}"
+
+"${FD}" "${FD_ARGS[@]}" -x "${CARGO}" "${CARGO_CMD}" --manifest-path={}
