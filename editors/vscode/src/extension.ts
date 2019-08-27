@@ -158,7 +158,10 @@ class ClientWorkspace {
             const hour = date.getHours().toString().padStart(2, '0');
             const minute = date.getMinutes().toString().padStart(2, '0');
             const second = date.getSeconds().toString().padStart(2, '0');
-            return [year, month, day, hour, minute, second].join('-');
+
+            const dateStr = [year, month, day].join('-');
+            const timeStr = [hour, minute, second].join('-');
+            return [dateStr, timeStr].join('T');
         };
 
         if (this.serverConfig.shouldLogToFile) {
