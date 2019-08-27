@@ -43,7 +43,7 @@ pub struct Markdown(pub String);
 #[salsa::query_group(LangServerCtxStorage)]
 pub trait LangServerCtx: ParserCtx {
     #[salsa::input]
-    fn dot_dir_path(&self) -> Option<PathBuf>;
+    fn workspace_root(&self) -> Option<PathBuf>;
 
     #[salsa::invoke(query_definitions::type_data)]
     fn type_data(&self) -> Option<Vec<types::TraitDetail>>;

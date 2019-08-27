@@ -49,12 +49,13 @@ pub(crate) fn type_data_json_file_path(db: &impl LangServerCtx) -> Option<PathBu
     //    we've built a reference implementation for VSCode.
     //    The VSCode client will send `Some(root_uri)` _iff_ a directory is
     //    opened (instead of just a file, for example).
-    //    The server will set `dot_dir_path` using this `root_uri`.
-    //    So if a file is opened, instead of a directory, `dot_dir_path` will
+    //    The server will set `workspace_root` to this `root_uri` value.
+    //    So if a file is opened, instead of a directory, `workspace_root` will
     //    not be set which means we won't have a path to a type-data file
     //    in which case returning `Option::None` is the only logical thing to do.
 
-    let mut path = db.dot_dir_path()?;
+    let mut path = db.workspace_root()?;
+    path.push(".oraide/");
     path.push("type-data.json");
     path.into()
 }

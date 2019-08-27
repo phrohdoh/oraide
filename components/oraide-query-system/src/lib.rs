@@ -136,8 +136,7 @@ impl QuerySystem {
                 send(chan, QueryResponse::AckInitialize { task_id });
 
                 if let Some(workspace_root_path) = workspace_root_url.and_then(|url| url.to_file_path().ok()) {
-                    let dot_dir_path = workspace_root_path.join(".oraide");
-                    self.db.set_dot_dir_path(dot_dir_path.into());
+                    self.db.set_workspace_root(workspace_root_path.into());
                 }
             },
             QueryRequest::HoverAtPosition { task_id, file_url, file_pos } => {
