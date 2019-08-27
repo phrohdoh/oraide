@@ -167,7 +167,13 @@ class ClientWorkspace {
         if (this.serverConfig.shouldLogToFile) {
             const serverStartDateTime = new Date();
             const formattedDateFileName = fnFmtDateToHumanFriendlyFileName(serverStartDateTime);
-            const logPath = path.join(cwd, `.oraide/logs/${formattedDateFileName}.log`);
+            const logDir = path.join(cwd, '.oraide/logs/');
+
+            if (!fs.existsSync(logDir)) {
+                fs.mkdirSync(logDir, { recursive: true });
+            }
+
+            const logPath = path.join(logDir, `${formattedDateFileName}.log`);
             console.info(`Logging to ${logPath}`);
 
             const logStream = new lazy_stream.Writable(() => fs.createWriteStream(logPath, { flags: 'w+' }));
