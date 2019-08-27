@@ -151,6 +151,9 @@ class ClientWorkspace {
             }
         });
 
+        // Format a `Date` to a human-friendly format.
+        //
+        // Example: 2019-08-27T07-44-03.log
         const fnFmtDateToHumanFriendlyFileName = (date: Date) => {
             const year = date.getFullYear().toString();
             const month = (date.getMonth() + 101).toString().substring(1);
@@ -165,7 +168,7 @@ class ClientWorkspace {
         };
 
         if (this.serverConfig.shouldLogToFile) {
-            const serverStartDateTime = new Date();
+            const serverStartDateTime = new Date(); // deliberately using local time
             const formattedDateFileName = fnFmtDateToHumanFriendlyFileName(serverStartDateTime);
             const logDir = path.join(cwd, '.oraide/logs/');
 
