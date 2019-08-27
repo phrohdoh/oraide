@@ -16,6 +16,10 @@ use std::{
 
 use url::Url;
 
+use oraide_parser_miniyaml::{
+    TokenKind,
+};
+
 use oraide_span::{
     ByteIndex,
     FileId,
@@ -143,19 +147,28 @@ pub(crate) fn definition_with_file_name(db: &impl LangServerCtx, file_name: Stri
 pub(crate) fn definition_with_file_id(db: &impl LangServerCtx, file_id: FileId, pos: Position) -> Option<(Url, Position, Position)> {
     let file_text = db.file_text(file_id);
     let byte_index = db.position_to_byte_index(file_id, pos)?;
-    let token = db.token_spanning_byte_index(file_id, byte_index)?;
+
+    // Get the entire `Node` so we can grab multiple `Token`s if necessary
+    let node = db.node_spanning_byte_index(file_id, byte_index)?;
+    let tokens = node.into_tokens();
+    let mut tokens_iter = tokens.iter();
+
+    // Find the token that the user requested the definition of
+    let token_idx = tokens_iter.position(|token| token.span.contains(byte_index))?;
+    let token = &tokens[token_idx];
     let token_text = token.text(&file_text)?;
 
-    let trimmed_token_text = token_text.trim();
-
-    // If there is nothing under the caret then we have nothing to look up
-    if trimmed_token_text.is_empty() {
-        return None;
-    }
+    let text_to_search_for = match tokens.get(token_idx - 1) {
+        // If the text in the document is `^Foobar`, for example, then include
+        // the `^` in the query (for OpenRA's `Inherits`).
+        Some(prev_token) if prev_token.kind == TokenKind::Caret => format!("^{}", token_text),
+        _ => token_text.into(),
+    };
 
     // TODO: Search all documents, not just the open ones
     for fid in db.all_file_ids() {
-        if let Some(def_span) = db.file_definition_span(fid, trimmed_token_text.to_owned()) {
+        // TODO: Find a way to not `clone` this `String` every time, if possible
+        if let Some(def_span) = db.file_definition_span(fid, text_to_search_for.clone()) {
             let def_file_name = db.file_name(def_span.source());
 
             let def_file_url = match Url::from_str(&def_file_name).ok() {

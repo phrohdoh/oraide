@@ -15,6 +15,8 @@ use itertools::MultiPeek;
 
 use oraide_span::{
     FileSpan,
+    ByteCount,
+    ByteIndex,
 };
 
 use crate::{
@@ -186,6 +188,32 @@ impl Node {
             (Some(source), Some(start), Some(end)) => FileSpan::new(source, start, end),
             _ => return None,
         })
+    }
+
+    /// Convert this [`Node`] into a collection of [`Token`]s
+    ///
+    /// [`Node`]: struct.Node.html
+    /// [`Token`]: struct.Token.html
+    pub fn into_tokens(mut self) -> Vec<Token> {
+        let mut tokens = vec![];
+
+        if let Some(t) = self.indentation_token {
+            tokens.push(t);
+        }
+
+        tokens.append(&mut self.key_tokens);
+
+        if let Some(t) = self.key_terminator_token {
+            tokens.push(t);
+        }
+
+        tokens.append(&mut self.value_tokens);
+
+        if let Some(t) = self.comment_token {
+            tokens.push(t);
+        }
+
+        tokens
     }
 
     //// Compute the single [`Token`] that contains the given `span`, if any
