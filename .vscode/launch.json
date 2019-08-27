@@ -10,5 +10,13 @@
             "outFiles": [ "editors/vscode/out/**/*.js" ],
             "preLaunchTask": "Build all"
         },
+        {
+            "type": "lldb",
+            "request": "attach",
+            "name": "Attach to running `ora` process",
+            "program": "${workspaceRoot}/target/debug/ora",
+            "pid": "${command:pickProcess}",
+            "sourceLanguages": ["rust"]
+        },
     ]
 }
