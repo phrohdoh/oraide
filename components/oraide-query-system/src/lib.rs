@@ -14,7 +14,6 @@ use salsa::{
 };
 
 use oraide_actor::{
-    Position,
     RangedFilePosition,
     Actor,
     QueryRequest,
@@ -22,19 +21,20 @@ use oraide_actor::{
 };
 
 use oraide_parser_miniyaml::{
+    FilesCtx,
+    FilesCtxExt,
+    FilesCtxStorage,
+    TextFilesCtx,
+    TextFilesCtxExt,
+    TextFilesCtxStorage,
     ParserCtx,
-    ParserCtxExt,
     ParserCtxStorage,
 };
 
-mod lang_server;
-pub use lang_server::{
-    LangServerCtx,
-    LangServerCtxStorage,
-    Markdown,
+use oraide_language_server::{
+    LanguageServerCtx,
+    LanguageServerCtxStorage,
 };
-
-mod query_definitions;
 
 /// Entrypoint into MiniYaml parsing
 ///
@@ -50,10 +50,15 @@ mod query_definitions;
 /// };
 ///
 /// let mut db = OraideDatabase::default();
-/// let file_id = db.add_file("example.yaml", "Hello:\n");
+/// let file_id = db.add_text_file("example.yaml", "Hello:\n");
 /// let tree: Tree = db.file_tree(file_id);
 /// ```
-#[salsa::database(ParserCtxStorage, LangServerCtxStorage)]
+#[salsa::database(
+    FilesCtxStorage,
+    TextFilesCtxStorage,
+    ParserCtxStorage,
+    LanguageServerCtxStorage,
+)]
 pub struct OraideDatabase {
     rt: salsa::Runtime<Self>,
 }
@@ -75,7 +80,13 @@ impl Default for OraideDatabase {
     }
 }
 
-impl ParserCtxExt for OraideDatabase {}
+impl FilesCtx for OraideDatabase {}          // _: salsa::Database
+impl TextFilesCtx for OraideDatabase {}      // _: FilesCtx
+impl ParserCtx for OraideDatabase {}         // _: TextFilesCtx
+impl LanguageServerCtx for OraideDatabase {} // _: ParserCtx
+
+impl FilesCtxExt for OraideDatabase {}       // _: FilesCtx
+impl TextFilesCtxExt for OraideDatabase {}   // _: TextFilesCtx
 
 impl ParallelDatabase for OraideDatabase {
     fn snapshot(&self) -> Snapshot<Self> {
@@ -192,12 +203,12 @@ impl QuerySystem {
                 for change in changes {
                     let start_offset = self.db.position_to_byte_index(
                         file_id,
-                        Position::from(change.0.start),
+                        change.0.start.into(),
                     ).unwrap();
 
                     let end_offset = self.db.position_to_byte_index(
                         file_id,
-                        Position::from(change.0.end),
+                        change.0.end.into(),
                     ).unwrap();
 
                     current_contents.drain(start_offset.to_usize()..end_offset.to_usize());

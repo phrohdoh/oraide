@@ -15,8 +15,6 @@ use itertools::MultiPeek;
 
 use oraide_span::{
     FileSpan,
-    ByteCount,
-    ByteIndex,
 };
 
 use crate::{
