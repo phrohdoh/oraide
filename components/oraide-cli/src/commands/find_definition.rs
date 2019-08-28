@@ -9,12 +9,12 @@ use std::{
 };
 
 use oraide_span::FileId;
-
-use oraide_query_system::OraideDatabase;
-
 use oraide_parser_miniyaml::{
+    FilesCtx as _,
+    TextFilesCtx as _,
     ParserCtx as _,
 };
+use oraide_query_system::OraideDatabase;
 
 pub(crate) struct FindDefinition {
     name_to_find: String,
@@ -46,10 +46,11 @@ impl FindDefinition {
 
     pub(crate) fn run(&self) {
         for file_id in self.file_ids.iter() {
-            if let Some(span) = self.db.file_definition_span(*file_id, self.name_to_find.clone()) {
-                let file_name = self.db.file_name(*file_id);
+            if let Some(node) = self.db.top_level_node_by_key_in_file(*file_id, self.name_to_find.clone()) {
+                let span = node.span().unwrap();
+                let file_name = self.db.file_path(*file_id).unwrap();
                 let start = span.start();
-                let loc = self.db.location(*file_id, start);
+                let loc = self.db.convert_byte_index_to_location(*file_id, start).unwrap();
                 println!("{}:{}", file_name, loc);
             }
         }

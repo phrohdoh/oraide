@@ -21,6 +21,14 @@ use oraide_actor::{
     QueryResponse,
 };
 
+mod language_server_ctx;
+pub mod types;
+
+pub use language_server_ctx::{
+    LanguageServerCtx,
+    LanguageServerCtxStorage,
+};
+
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(tag = "method", rename_all = "lowercase")]
 pub enum LspMessage {
@@ -258,7 +266,10 @@ pub fn lsp_serve(send_to_query_channel: Sender<QueryRequest>) {
                                 changes: params
                                     .content_changes
                                     .into_iter()
-                                    .map(|x| (x.range.unwrap(), x.text))
+                                    .map(|x| (
+                                        x.range.expect("TODO: support range-less `textDocument/didChange`, https://microsoft.github.io/language-server-protocol/specification#textDocument_didChange"),
+                                        x.text,
+                                    ))
                                     .collect(),
                             });
                         },
@@ -283,58 +294,5 @@ pub fn lsp_serve(send_to_query_channel: Sender<QueryRequest>) {
             },
             _ => unimplemented!("lsp_serve io::stdin().read_line _ match arm"),
         }
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use oraide_parser_miniyaml::{
-        ParserCtxExt,
-    };
-
-    use crate::*;
-
-    /// Compute the `ByteIndex` of the `n`-th (1-based) `ch` in `s`
-    ///
-    /// # Example
-    /// ```rust
-    /// let idx_of_2nd_n = byte_index_of_nth_char_in_str(2, 'n', "Name: McKenna");
-    /// ```
-    fn byte_index_of_nth_char_in_str(n: usize, ch: char, s: &str) -> ByteIndex {
-        assert!(n > 0, "n={}", n);
-        assert!(n < s.len(), "n={} < s.len()={}", n, s.len());
-
-        let idx = s
-            .match_indices(ch)
-            .nth(n - 1) // `nth` is 0-based (https://doc.rust-lang.org/std/iter/trait.Iterator.html#method.nth)
-            .map(|(idx, _)| idx)
-            .expect(&format!(
-                "TEST LOGIC ERROR: {}({}, {}, {:?})",
-                stringify!(byte_index_of_nth_char_in_str),
-                n, ch, s
-            ));
-
-        ByteIndex::from(idx)
-    }
-
-    #[test]
-    fn position_to_byte_index() {
-        // Arrange
-        let mut db = OraideDatabase::default();
-        let text = "E1:\n\tTooltip:\n\t\tName: Standard Infantry\n";
-        let file_id = db.add_file("test-file", text.clone());
-
-        // Act
-        let opt_actual_byte_idx = db.position_to_byte_index(file_id, languageserver_types::Position {
-            line: 2,
-            character: 10,
-        });
-
-        // Assert
-        let expected_idx = byte_index_of_nth_char_in_str(2, 'a', text);
-        assert!(opt_actual_byte_idx.is_some());
-
-        let actual_byte_idx = opt_actual_byte_idx.unwrap();
-        assert_eq!(actual_byte_idx, expected_idx);
     }
 }

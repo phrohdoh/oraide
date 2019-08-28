@@ -20,11 +20,11 @@ use oraide_span::{
     FileId,
 };
 
-use oraide_query_system::OraideDatabase;
-
 use oraide_parser_miniyaml::{
-    ParserCtxExt as _,
+    TextFilesCtxExt as _,
 };
+
+use oraide_query_system::OraideDatabase;
 
 mod commands;
 use commands::{
@@ -45,7 +45,6 @@ pub fn main() {
     let cmd = match args.next() {
         Some(cmd) => cmd,
         _ => {
-            eprintln!("<no arg>");
             print_usage_instructions();
             return;
         },
@@ -91,11 +90,22 @@ pub fn main() {
             println!("[info] took {:?} to look for definition(s) of `{}`", start.elapsed(), name_to_find);
         },
         "hover" => {
-            let file_path = match args.next() {
-                Some(file_path) => file_path.into(),
+            let root_dir = match args.next() {
+                Some(path) => path.into(),
                 _ => {
                     eprintln!();
-                    eprintln!("Please provide the <file-path> parameter (see below for more information)");
+                    eprintln!("Please provide the <root-dir> parameter (see below for more information)");
+                    eprintln!();
+                    print_usage_instructions();
+                    return;
+                },
+            };
+
+            let rel_file_path = match args.next() {
+                Some(path) => path.into(),
+                _ => {
+                    eprintln!();
+                    eprintln!("Please provide the <rel-file-path> parameter (see below for more information)");
                     eprintln!();
                     print_usage_instructions();
                     return;
@@ -124,7 +134,7 @@ pub fn main() {
                 },
             };
 
-            let hover = Hover::new(file_path, line_idx, col_idx)
+            let hover = Hover::new(root_dir, rel_file_path, line_idx, col_idx)
                 .expect("Failed to setup hover");
 
             hover.run();
@@ -149,12 +159,12 @@ pub fn main() {
 
 fn print_usage_instructions() {
     eprintln!("Usage:");
-    eprintln!("  ora ide                                                 - run the OpenRA language server / IDE support");
-    eprintln!("  ora parse     <file-path>                               - print all definitions (top-level items) in a file");
-    eprintln!("  ora find-defs <project-root-path> <item-name>           - find all definitions with name <item-name> in <project-root-path>");
-    eprintln!("  ora hover     <file-path> <line-number> <column-number> - print hover data for the token at <file-path>:<line-number>:<column-number>");
-    eprintln!("    example: ora hover foo/bar/baz.yaml 15 8");
-  //eprintln!("  ora lint <file-path>                                    - unimplemented");
+    eprintln!("  ora ide                                                                - run the OpenRA language server / IDE support");
+    eprintln!("  ora parse     <file-path>                                              - print all definitions (top-level items) in a file");
+    eprintln!("  ora find-defs <project-root-path> <item-name>                          - find all definitions with name <item-name> in <project-root-path>");
+    eprintln!("  ora hover     <root-dir> <rel-file-path> <line-number> <column-number> - print hover data for the token at <root-dir>/<rel-file-path>:<line-number>:<column-number>");
+    eprintln!("    example: ora hover /path/to/project/root/dir rules/infantry.yaml 15 8");
+  //eprintln!("  ora lint <file-path>                                                   - unimplemented");
 }
 
 /// Read the contents of `file_path` and add it to `db`, creating and returning
@@ -173,7 +183,7 @@ pub(crate) fn add_file(db: &mut OraideDatabase, file_path: &Path) -> Result<File
         text
     };
 
-    let file_id = db.add_file(file_path.to_string_lossy(), text);
+    let file_id = db.add_text_file(file_path.to_string_lossy(), text);
 
     Ok(file_id)
 }

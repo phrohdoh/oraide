@@ -2,12 +2,6 @@ use oraide_span::{
     ByteIndex,
 };
 
-use oraide_parser_miniyaml::{
-    Token,
-    ParserCtx,
-    ParserCtxExt,
-};
-
 use crate::OraideDatabase;
 
 /// Compute the `ByteIndex` of the `n`-th (1-based) `ch` in `s`
@@ -38,7 +32,7 @@ fn token_spanning_byte_index() {
     // Arrange
     let mut db = OraideDatabase::default();
     let text = "E1:\n\tTooltip:\n\t\tName: Standard Infantry\n";
-    let file_id = db.add_file("test-file", text.clone());
+    let file_id = db.add_text_file("test-file", text.clone());
 
     // Act
     let opt_actual_token = db.token_spanning_byte_index(file_id, ByteIndex::from(24));
@@ -61,7 +55,7 @@ fn node_spanning_byte_index() {
     // Arrange
     let mut db = OraideDatabase::default();
     let text = "E1:\n\tTooltip:\n\t\tName: Standard Infantry\n";
-    let file_id = db.add_file("test-file", text.clone());
+    let file_id = db.add_text_file("test-file", text.clone());
 
     // Act
     let opt_actual_node = db.node_spanning_byte_index(file_id, ByteIndex::from(24));
@@ -77,4 +71,25 @@ fn node_spanning_byte_index() {
         expected_node_key_text,
         "the `{}` node should have been returned", expected_node_key_text
     );
+}
+
+#[test]
+fn position_to_byte_index() {
+    // Arrange
+    let mut db = OraideDatabase::default();
+    let text = "E1:\n\tTooltip:\n\t\tName: Standard Infantry\n";
+    let file_id = db.add_text_file("test-file", text.clone());
+
+    // Act
+    let opt_actual_byte_idx = db.position_to_byte_index(file_id, languageserver_types::Position {
+        line: 2,
+        character: 10,
+    });
+
+    // Assert
+    let expected_idx = byte_index_of_nth_char_in_str(2, 'a', text);
+    assert!(opt_actual_byte_idx.is_some());
+
+    let actual_byte_idx = opt_actual_byte_idx.unwrap();
+    assert_eq!(actual_byte_idx, expected_idx);
 }

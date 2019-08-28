@@ -14,7 +14,6 @@ use salsa::{
 };
 
 use oraide_actor::{
-    Position,
     RangedFilePosition,
     Actor,
     QueryRequest,
@@ -22,19 +21,19 @@ use oraide_actor::{
 };
 
 use oraide_parser_miniyaml::{
-    ParserCtx,
-    ParserCtxExt,
+    FilesCtx,
+    FilesCtxExt,
+    FilesCtxStorage,
+    TextFilesCtx,
+    TextFilesCtxExt,
+    TextFilesCtxStorage,
     ParserCtxStorage,
 };
 
-mod lang_server;
-pub use lang_server::{
-    LangServerCtx,
-    LangServerCtxStorage,
-    Markdown,
+use oraide_language_server::{
+    LanguageServerCtx,
+    LanguageServerCtxStorage,
 };
-
-mod query_definitions;
 
 /// Entrypoint into MiniYaml parsing
 ///
@@ -50,10 +49,15 @@ mod query_definitions;
 /// };
 ///
 /// let mut db = OraideDatabase::default();
-/// let file_id = db.add_file("example.yaml", "Hello:\n");
+/// let file_id = db.add_text_file("example.yaml", "Hello:\n");
 /// let tree: Tree = db.file_tree(file_id);
 /// ```
-#[salsa::database(ParserCtxStorage, LangServerCtxStorage)]
+#[salsa::database(
+    FilesCtxStorage,
+    TextFilesCtxStorage,
+    ParserCtxStorage,
+    LanguageServerCtxStorage,
+)]
 pub struct OraideDatabase {
     rt: salsa::Runtime<Self>,
 }
@@ -75,7 +79,8 @@ impl Default for OraideDatabase {
     }
 }
 
-impl ParserCtxExt for OraideDatabase {}
+impl FilesCtxExt for OraideDatabase {}
+impl TextFilesCtxExt for OraideDatabase {}
 
 impl ParallelDatabase for OraideDatabase {
     fn snapshot(&self) -> Snapshot<Self> {
@@ -145,10 +150,13 @@ impl QuerySystem {
                     let chan = self.send_channel.clone();
 
                     move || {
-                        match db.hover_with_file_name(file_url.to_string(), file_pos.into()) {
-                            Some(md) => send(chan, QueryResponse::HoverData {
+                        match db.documentation_for_position_in_file_path(
+                            file_url.to_string(),
+                            file_pos.into(),
+                        ) {
+                            Some(string) => send(chan, QueryResponse::HoverData {
                                 task_id, 
-                                data: md.0,
+                                data: string,
                             }),
                             _ => send(chan, QueryResponse::HoverData {
                                 task_id,
@@ -164,7 +172,13 @@ impl QuerySystem {
                     let chan = self.send_channel.clone();
 
                     move || {
-                        match db.definition_with_file_name(file_url.to_string(), file_pos.into()) {
+                        let file_url = file_url.to_string();
+                        let file_pos = file_pos.into();
+
+                        match db.definition_position_in_file_path(
+                            file_url,
+                            file_pos,
+                        ) {
                             Some((file_url, start_pos, end_exclusive_pos)) => send(chan, QueryResponse::Definition {
                                 task_id,
                                 ranged_file_position: RangedFilePosition::new_from_components(
@@ -183,28 +197,43 @@ impl QuerySystem {
             },
             QueryRequest::FileOpened { file_url, file_text } => {
                 // TODO: How will we handle duplicates?
-                let _ = self.db.add_file(file_url.as_str(), file_text);
+                let _ = self.db.add_text_file(
+                    file_url.as_str(),
+                    file_text,
+                );
             },
             QueryRequest::FileChanged { file_url, changes } => {
-                let file_id = self.db.file_name_to_file_id(file_url.to_string()).unwrap();
-                let mut current_contents = self.db.file_text(file_id);
+                let file_url = file_url.to_string();
 
-                for change in changes {
-                    let start_offset = self.db.position_to_byte_index(
-                        file_id,
-                        Position::from(change.0.start),
-                    ).unwrap();
+                let file_id = self.db.file_id_of_file_path(file_url).unwrap();
+                let mut current_contents = self.db.file_text(file_id).unwrap();
 
-                    let end_offset = self.db.position_to_byte_index(
-                        file_id,
-                        Position::from(change.0.end),
-                    ).unwrap();
+                for (range, text) in changes {
+                    let start_offset = {
+                        let pos = range.start.into();
+                        let byte_index = self.db.convert_position_to_byte_index(
+                            file_id,
+                            pos,
+                        ).unwrap();
 
-                    current_contents.drain(start_offset.to_usize()..end_offset.to_usize());
-                    current_contents.insert_str(start_offset.to_usize(), &change.1);
+                        byte_index.to_usize()
+                    };
+
+                    let end_offset = {
+                        let pos = range.end.into();
+                        let byte_index = self.db.convert_position_to_byte_index(
+                            file_id,
+                            pos,
+                        ).unwrap();
+
+                        byte_index.to_usize()
+                    };
+
+                    current_contents.drain(start_offset..end_offset);
+                    current_contents.insert_str(start_offset, &text);
                 }
 
-                self.db.set_file_text(file_id, current_contents);
+                self.db.set_file_text(file_id, current_contents.into());
             },
         }
     }

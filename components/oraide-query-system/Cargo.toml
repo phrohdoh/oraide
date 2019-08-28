@@ -9,6 +9,7 @@ edition = "2018"
 oraide-span = { path = "../oraide-span" }
 oraide-actor = { path = "../oraide-actor" }
 oraide-parser-miniyaml = { path = "../oraide-parser-miniyaml" }
+oraide-language-server = { path = "../oraide-language-server" }
 salsa = "^0.12"
 derive_more = "0.14.1"
 languageserver-types = "0.54.0"

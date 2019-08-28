@@ -10,8 +10,10 @@ use oraide_actor::{
 
 use oraide_query_system::{
     OraideDatabase,
-    LangServerCtx,
-    Markdown,
+};
+
+use oraide_language_server::{
+    LanguageServerCtx as _,
 };
 
 pub(crate) struct Hover {
@@ -22,9 +24,16 @@ pub(crate) struct Hover {
 }
 
 impl Hover {
-    pub(crate) fn new(file_path: PathBuf, line_idx: usize, col_idx: usize) -> Result<Self, String> {
+    pub(crate) fn new(
+        root: PathBuf,
+        rel_file_path: PathBuf,
+        line_idx: usize,
+        col_idx: usize,
+    ) -> Result<Self, String> {
         let mut db = OraideDatabase::default();
 
+        db.set_workspace_root(root.clone().into());
+        let file_path = root.join(rel_file_path);
         let file_id = crate::add_file(&mut db, &file_path)?;
 
         Ok(Self {
@@ -36,8 +45,14 @@ impl Hover {
     }
 
     pub(crate) fn run(&self) {
-        match self.db.hover_with_file_id(self.file_id, Position::new(self.line_idx, self.col_idx)) {
-            Some(Markdown(md)) => println!("{:?}", md),
+        match self.db.documentation_for_position_in_file(
+            self.file_id,
+            Position::new(
+                self.line_idx,
+                self.col_idx,
+            ),
+        ) {
+            Some(string) => println!("{:?}", string),
             _ => println!("no results"),
         }
     }

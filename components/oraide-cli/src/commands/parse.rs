@@ -10,12 +10,14 @@ use std::{
 
 use oraide_span::FileId;
 
-use oraide_query_system::OraideDatabase;
-
 use oraide_parser_miniyaml::{
-    ParserCtx as _,
     TokenCollectionExts as _,
+    FilesCtx as _,
+    TextFilesCtx as _,
+    ParserCtx as _,
 };
+
+use oraide_query_system::OraideDatabase;
 
 pub(crate) struct Parse {
     file_ids: Vec<FileId>,
@@ -38,24 +40,35 @@ impl Parse {
 
     pub(crate) fn run(&self) {
         for file_id in self.file_ids.iter() {
-            let text = self.db.file_text(*file_id);
-            let file_name = self.db.file_name(*file_id);
-            let defs = self.db.file_definitions(*file_id);
+            let text = match self.db.file_text(*file_id) {
+                Some(text) => text,
+                _ => continue,
+            };
 
-            println!("Found {} definition(s) in {} ({:?})", defs.len(), file_name, *file_id);
+            let file_path = match self.db.file_path(*file_id) {
+                Some(path) => path,
+                _ => continue,
+            };
 
-            let def_locs_and_slices = defs.iter()
+            let top_level_nodes = match self.db.all_top_level_nodes_in_file(*file_id) {
+                Some(nodes) => nodes,
+                _ => continue,
+            };
+
+            println!("Found {} definition(s) in {} ({:?})", top_level_nodes.len(), file_path, *file_id);
+
+            let def_locs_and_slices = top_level_nodes.iter()
                 .filter_map(|shrd_node| shrd_node.key_tokens.span())
                 .map(|span| {
                     let start = span.start();
-                    let loc = self.db.location(*file_id, start);
+                    let loc = self.db.convert_byte_index_to_location(*file_id, start).unwrap();
                     let end_exclusive = span.end_exclusive().to_usize();
                     (loc, &text[start.to_usize()..end_exclusive])
                 })
                 .collect::<Vec<_>>();
 
             for (loc, slice) in def_locs_and_slices {
-                println!(" - {} @ {}:{}", slice, file_name, loc);
+                println!(" - {} @ {}:{}", slice, file_path, loc);
             }
         }
     }
