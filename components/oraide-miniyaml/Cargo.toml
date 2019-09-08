@@ -6,6 +6,9 @@ edition = "2018"
 
 [dependencies]
 mltt-span = { git = "https://github.com/brendanzab/rust-nbe-for-mltt/", rev = "1fc253f707a4ea801409e89dc929c40bb28590de" }
+
+# This dep uses a feature that is nightly-only, so we pin ourselves to the
+# nightly channel via the top-level `rust-toolchain` file.
 language-reporting = { git = "https://github.com/nikomatsakis/language-reporting", branch = "remove-codespan-dep" }
 log = "0.4"
 unindent = "0.1.3"
