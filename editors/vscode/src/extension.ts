@@ -141,7 +141,15 @@ class ClientWorkspace {
         const serverExeArgs = this.serverConfig.exeArgs || [ 'ide' ];
 
         const cwd = this.rootDirFsPath;
-        const serverProcess = spawn(serverExePath, serverExeArgs, { cwd });
+        const serverProcess = spawn(
+            serverExePath,
+            serverExeArgs,
+            {
+                cwd,
+                env: {
+                    "RUST_BACKTRACE": "1",
+                },
+            });
 
         serverProcess.on('error', (err: { code?: string; message: string }) => {
             if (err.code === 'ENOENT') {
