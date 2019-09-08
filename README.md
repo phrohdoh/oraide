@@ -1,7 +1,7 @@
 # `oraide`
 
 A collection of tools with the aim of lowering the barrier to entry for
-OpenRA-based game development.
+[OpenRA]-based game development.
 
 ## Screenshots
 
@@ -33,6 +33,7 @@ project, so you should probably ping me directly in the `#off-topic` channel.
 Please don't hesitate to reach out if you have
 questions/comments/concerns/praise/whatever!
 
+[OpenRA]: https://github.com/OpenRA/OpenRA
 [vscode-hover]: ./images/vscode-extension-5c66582.png
 [LICENSE]: ./LICENSE
 [./docs/dev/architecture.md]: ./docs/dev/architecture.md
