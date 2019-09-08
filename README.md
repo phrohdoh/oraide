@@ -15,22 +15,6 @@ OpenRA-based game development.
 
 See the [LICENSE](./LICENSE) file.
 
-## Terms to know
-
-**OpenRA ([link](https://openra.net))**: An open-source
-([GPLv3+](https://www.gnu.org/licenses/quick-guide-gplv3.html)) game engine
-implemented in [C#](https://docs.microsoft.com/en-us/dotnet/csharp/) on top of
-the [.NET Framework](https://en.wikipedia.org/wiki/.NET_Framework)
-
-**MiniYaml**: OpenRA's custom configuration language which hijacked the `.yaml`
-extension (note: it **is not** valid [YAML](https://yaml.org/spec/1.2/spec.html))
-
-**SDK ([link](https://github.com/OpenRA/OpenRAModSDK/))**: The official template
-for OpenRA-based games that comes bundled with utility scripts
-
-**LSP ([link](https://microsoft.github.io/language-server-protocol/specification))**:
-The _Language Server Protocol_ spearheaded by Microsoft
-
 ## Architecture
 
 Read [./docs/dev/architecture.md](./docs/dev/architecture.md) for an overview of
