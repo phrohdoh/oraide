@@ -36,7 +36,9 @@ import {
     RevealOutputChannelOn,
 } from 'vscode-languageclient';
 
-const DEFAULT_SERVER_EXE_NAME: string = 'ora';
+const DEFAULT_SERVER_EXE_NAME_UNIX: string = 'ora';
+const DEFAULT_SERVER_EXE_NAME_WINDOWS: string = 'ora.exe';
+
 const workspaces: Map<Uri, ClientWorkspace> = new Map();
 
 export async function activate(ctx: ExtensionContext) {
@@ -149,8 +151,14 @@ class ClientWorkspace {
     }
 
     private async spawnServerProcess(): Promise<ChildProcess> {
+        const isWindows = /^win/.test(process.platform);
+
         // Run the server executable from $PATH, unless there's an override.
-        const serverExePath = this.serverConfig.exePath || DEFAULT_SERVER_EXE_NAME;
+        const serverExePath = this.serverConfig.exePath || (
+            isWindows ?
+            DEFAULT_SERVER_EXE_NAME_WINDOWS :
+            DEFAULT_SERVER_EXE_NAME_UNIX
+        );
 
         const serverExeArgs = this.serverConfig.exeArgs || [ 'ide' ];
 
