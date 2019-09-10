@@ -1,8 +1,18 @@
 #!/usr/bin/env python3
 
-# This Source Code Form is subject to the terms of the Mozilla Public
-# License, v. 2.0. If a copy of the MPL was not distributed with this
-# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+# This file is part of oraide.  See <https://github.com/Phrohdoh/oraide>.
+# 
+# oraide is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License version 3
+# as published by the Free Software Foundation.
+# 
+# oraide is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Affero General Public License for more details.
+# 
+# You should have received a copy of the GNU Affero General Public License
+# along with oraide.  If not, see <https://www.gnu.org/licenses/>.
 
 import os
 import pathlib
@@ -19,7 +29,25 @@ map_file_ext_to_comment_prefix = {
     '.rs': '//',
     '.bash': '#',
     '.py': '#',
+    '.ts': '//',
 }
+
+# AGPLv3
+license_lines = [
+    "This file is part of oraide.  See <https://github.com/Phrohdoh/oraide>.",
+    "",
+    "oraide is free software: you can redistribute it and/or modify",
+    "it under the terms of the GNU Affero General Public License version 3",
+    "as published by the Free Software Foundation.",
+    "",
+    "oraide is distributed in the hope that it will be useful,",
+    "but WITHOUT ANY WARRANTY; without even the implied warranty of",
+    "MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the",
+    "GNU Affero General Public License for more details.",
+    "",
+    "You should have received a copy of the GNU Affero General Public License",
+    "along with oraide.  If not, see <https://www.gnu.org/licenses/>.",
+]
 
 for root, dirs, files in os.walk(start_dir_path, topdown=True):
     # modify `dirs` in-place to remove the excluded directories
@@ -40,18 +68,16 @@ for root, dirs, files in os.walk(start_dir_path, topdown=True):
 
         new_content_str = None
 
-        # read the content, adding the MPLv2 header
+        # read the content, adding the license header
         with open(p, 'r+') as fh:
-            contents = fh.read()
-            contents = [
-                f"{comment_prefix} This Source Code Form is subject to the terms of the Mozilla Public",
-                f"{comment_prefix} License, v. 2.0. If a copy of the MPL was not distributed with this",
-                f"{comment_prefix} file, You can obtain one at http://mozilla.org/MPL/2.0/.",
+            file_content = fh.read()
+
+            lines = [f"{comment_prefix} {l}" for l in license_lines] + [
                 "", # an empty line
-                contents,
+                file_content,
             ]
 
-            new_content_str = '\n'.join(contents)
+            new_content_str = '\n'.join(lines)
 
         # overwrite the file
         with open(p, 'w') as fh:
