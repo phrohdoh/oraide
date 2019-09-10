@@ -159,6 +159,8 @@ class ClientWorkspace {
             }
         });
 
+        window.showInformationMessage(`OpenRA IDE server PID: ${serverProcess.pid}`);
+
         // Format a `Date` to a human-friendly format.
         //
         // Example: 2019-08-27T07-44-03.log
