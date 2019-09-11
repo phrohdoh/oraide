@@ -173,6 +173,10 @@ class ClientWorkspace {
                 },
             });
 
+        if (serverProcess && serverProcess.pid) {
+            window.showInformationMessage(`OpenRA IDE server PID: ${serverProcess.pid}`);
+        }
+
         serverProcess.on('error', (err: { code?: string; message: string }) => {
             if (err.code === 'ENOENT') {
                 const msg = `Could not spawn \`${serverExePath}\`: ${err.message}`;
@@ -180,8 +184,6 @@ class ClientWorkspace {
                 window.showWarningMessage(msg);
             }
         });
-
-        window.showInformationMessage(`OpenRA IDE server PID: ${serverProcess.pid}`);
 
         // Format a `Date` to a human-friendly format.
         //
