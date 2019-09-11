@@ -168,10 +168,7 @@ impl QuerySystem {
                                 task_id, 
                                 data: string,
                             }),
-                            _ => send(chan, QueryResponse::HoverData {
-                                task_id,
-                                data: "<no results>".into(),
-                            })
+                            _ => send(chan, QueryResponse::Nothing { task_id }),
                         }
                     }
                 });

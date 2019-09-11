@@ -91,6 +91,7 @@ impl Actor for LspResponder {
     // Map our `QueryResponse` type to `languageserver_types` types
     fn on_new_messages(&mut self, messages: &mut VecDeque<Self::Input>) {
         match messages.pop_front().unwrap() {
+            QueryResponse::Nothing { task_id } => send_response(task_id, ()),
             QueryResponse::AckInitialize { task_id } => {
                 let result = languageserver_types::InitializeResult {
                     capabilities: languageserver_types::ServerCapabilities {

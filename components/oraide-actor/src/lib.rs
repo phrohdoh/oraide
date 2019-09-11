@@ -83,6 +83,9 @@ impl QueryRequest {
 }
 
 pub enum QueryResponse {
+    Nothing {
+        task_id: TaskId,
+    },
     AckInitialize {
         task_id: TaskId,
     },
