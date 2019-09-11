@@ -94,14 +94,9 @@ impl Actor for LspResponder {
             QueryResponse::AckInitialize { task_id } => {
                 let result = languageserver_types::InitializeResult {
                     capabilities: languageserver_types::ServerCapabilities {
-                        // text_document_sync: Some(
-                        //     languageserver_types::TextDocumentSyncCapability::Kind(
-                        //         languageserver_types::TextDocumentSyncKind::Incremental,
-                        //     ),
-                        // ),
                         text_document_sync: Some(
                             languageserver_types::TextDocumentSyncCapability::Kind(
-                                languageserver_types::TextDocumentSyncKind::Full,
+                                languageserver_types::TextDocumentSyncKind::Incremental,
                             ),
                         ),
                         hover_provider: Some(true),
@@ -277,7 +272,9 @@ pub fn lsp_serve(send_to_query_channel: Sender<QueryRequest>) {
                                     .content_changes
                                     .into_iter()
                                     .map(|x| (
-                                        x.range.expect("TODO: support range-less `textDocument/didChange`, https://microsoft.github.io/language-server-protocol/specification#textDocument_didChange"),
+                                        // Since we are using `Incremental` text document sync
+                                        // we will *always* have a `range`
+                                        x.range.unwrap(),
                                         x.text,
                                     ))
                                     .collect(),
