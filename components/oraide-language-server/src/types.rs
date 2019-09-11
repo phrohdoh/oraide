@@ -24,7 +24,7 @@ pub struct TraitProperty {
     pub type_name: String,
     pub human_friendly_type_name: String,
     pub name: String,
-    pub doc_lines: Vec<String>,
+    pub doc_lines: Option<Vec<String>>,
 
     pub default_value: Option<String>,
     pub valid_values: Option<Vec<String>>,
