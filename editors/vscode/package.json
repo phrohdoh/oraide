@@ -67,12 +67,12 @@
         },
         "oraide.server.exeArgs": {
           "type": "array",
-          "default": "oraide-language-server",
+          "default": ["ide"],
           "description": "Language server executable arguments"
         },
         "oraide.server.exePath": {
           "type": "string",
-          "default": "oraide-language-server",
+          "default": "ora",
           "description": "Language server executable name (or path) to run"
         },
         "oraide.server.shouldLogToFile": {
