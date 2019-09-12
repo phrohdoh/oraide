@@ -22,8 +22,7 @@ the _OpenRA IDE_ project architecture (this does *not* cover LSP clients).
 
 ## Contact Us
 
-You can find the maintainer as _Phrohdoh_ on [OpenRA's Discord
-server].
+You can find the maintainer as _Phrohdoh#0436_ on [OpenRA's Discord server].
 
 Be sure to read and understand the server rules before participating.
 
