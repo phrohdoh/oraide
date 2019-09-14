@@ -107,7 +107,7 @@ class ClientWorkspace {
     private readonly dir: WorkspaceFolder;
     private disposables: Disposable[];
 
-    private get rootDirFsPath() { return this.dir.uri.fsPath; }
+    private get rootDirFsPath(): string { return this.dir.uri.fsPath; }
 
     constructor(dir: WorkspaceFolder) {
         this.serverConfig = ServerConfig.loadFromWorkspace(dir.uri.fsPath);
