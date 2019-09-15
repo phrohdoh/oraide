@@ -38,6 +38,7 @@ pub use ls_types::{
     Position,
     Range,
     RangedFilePosition,
+    Symbol,
 };
 
 pub type TaskId = usize;
@@ -66,6 +67,10 @@ pub enum QueryRequest {
         file_url: Url,
         changes: Vec<(LsRange, String)>,
     },
+    FileSymbols {
+        task_id: TaskId,
+        file_url: Url,
+    },
 }
 
 impl QueryRequest {
@@ -77,6 +82,7 @@ impl QueryRequest {
                 => true,
             QueryRequest::HoverAtPosition { .. }
             | QueryRequest::GoToDefinition { .. }
+            | QueryRequest::FileSymbols { .. }
                 => false,
         }
     }
@@ -96,7 +102,11 @@ pub enum QueryResponse {
     Definition {
         task_id: TaskId,
         ranged_file_position: Option<RangedFilePosition>,
-    }
+    },
+    DocumentSymbols {
+        task_id: TaskId,
+        symbols: Vec<Symbol>,
+    },
 }
 
 /// An actor in the task system.  This gives us a uniform way to

@@ -23,6 +23,7 @@ use {
     },
     oraide_actor::{
         Position,
+        Symbol,
     },
     oraide_parser_miniyaml::{
         ParserCtx,
@@ -69,6 +70,12 @@ pub trait LanguageServerCtx: ParserCtx {
         file_id: FileId,
         position: Position,
     ) -> Option<(Url, Position, Position)>;
+
+    fn symbols_in_file(
+        &self,
+        file_id: FileId,
+        top_level_only: bool,
+    ) -> Option<Vec<Symbol>>;
 }
 
 fn type_data(db: &impl LanguageServerCtx) -> Option<Vec<types::TraitDetail>> {
@@ -288,4 +295,87 @@ fn definition_position_in_file(
     }
 
     None
+}
+
+fn symbols_in_file(
+    db: &impl LanguageServerCtx,
+    file_id: FileId,
+    top_level_only: bool,
+) -> Option<Vec<Symbol>> {
+    let file_text = db.file_text(file_id)?;
+    let tree = db.file_tree(file_id)?;
+
+    let top_level_arena_node_ids: Vec<_> = {
+        let iter = tree.node_ids.iter().skip(1); // skip the sentinel
+        let tups = iter.filter_map(|arena_node_id|
+            tree.arena.get(*arena_node_id)
+                .map(|shrd_arena_node| (arena_node_id, &shrd_arena_node.data))
+        );
+
+        let tups = tups.filter(|(_arena_node_id, shrd_node)|
+            shrd_node.is_top_level() && shrd_node.has_key()
+        );
+
+        let tups = tups.map(|(arena_node_id, _shrd_node)| arena_node_id);
+
+        tups.collect()
+    };
+
+    let symbols: Vec<_> = top_level_arena_node_ids.into_iter()
+        .filter_map(|node_id| helpers::arena_node_id_to_sym(
+            db,
+            &file_text,
+            &tree.arena,
+            *node_id,
+            top_level_only,
+        )).collect();
+
+    symbols.into()
+}
+
+mod helpers {
+    use super::*;
+
+    pub(crate) fn arena_node_id_to_sym(
+        db: &impl LanguageServerCtx,
+        file_text: &'_ str,
+        shrd_arena: &oraide_parser_miniyaml::Arena,
+        arena_node_id: oraide_parser_miniyaml::ArenaNodeId,
+        top_level_only: bool,
+    ) -> Option<Symbol> {
+        let shrd_node = &shrd_arena.get(arena_node_id)?.data;
+        let name = shrd_node.key_text(file_text)?.to_owned();
+        let span = shrd_node.span()?;
+        let (start, end_exclusive) = db.convert_file_span_to_2_positions(span)?;
+        let range = oraide_actor::Range {
+            start,
+            end_exclusive,
+        };
+
+        let children = if top_level_only {
+            None
+        } else {
+            let children_iter = arena_node_id.children(&shrd_arena);
+            let children_syms: Vec<_> = children_iter.filter_map(|child_node_id|
+                arena_node_id_to_sym(
+                    db,
+                    file_text,
+                    shrd_arena,
+                    child_node_id,
+                    // Hardcoding to 1-level deep so we don't crowd the user's
+                    // UI with a ton of data.
+                    true,
+                )
+            ).collect();
+
+            Some(children_syms)
+        };
+
+        Some(Symbol {
+            name,
+            detail: None,
+            children,
+            range,
+        })
+    }
 }

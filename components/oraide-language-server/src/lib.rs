@@ -27,6 +27,7 @@ use serde::{
 use oraide_actor::{
     TaskId,
     Actor,
+    Symbol,
     QueryRequest,
     QueryResponse,
 };
@@ -71,10 +72,16 @@ pub enum LspMessage {
         params: languageserver_types::TextDocumentPositionParams,
     },
 
+    #[serde(rename = "textDocument/documentSymbol")]
+    TextDocSymbols {
+        id: usize,
+        params: languageserver_types::DocumentSymbolParams,
+    },
+
     #[serde(rename = "$/cancelRequest")]
     CancelRequest {
         params: languageserver_types::CancelParams,
-    }
+    },
 }
 
 /// The LSP service is split into two parts:
@@ -108,7 +115,7 @@ impl Actor for LspResponder {
                         implementation_provider: None,
                         references_provider: Some(false),
                         document_highlight_provider: None,
-                        document_symbol_provider: None,
+                        document_symbol_provider: true.into(),
                         workspace_symbol_provider: None,
                         code_action_provider: None,
                         code_lens_provider: None,
@@ -161,6 +168,29 @@ impl Actor for LspResponder {
                         send_response(task_id, location);
                     },
                 }
+            },
+            QueryResponse::DocumentSymbols { task_id, symbols } => {
+                fn oraide_sym_to_doc_sym(sym: Symbol) -> languageserver_types::DocumentSymbol {
+                    languageserver_types::DocumentSymbol {
+                        name: sym.name,
+                        detail: sym.detail,
+                        kind: languageserver_types::SymbolKind::Object,
+                        range: sym.range.clone().into(),
+                        selection_range: sym.range.into(),
+                        deprecated: None,
+                        children: sym.children.map(|children|
+                            children.into_iter()
+                                .map(oraide_sym_to_doc_sym)
+                                .collect()
+                        ),
+                    }
+                }
+
+                let symbols: Vec<_> = symbols.into_iter()
+                    .map(oraide_sym_to_doc_sym)
+                    .collect();
+
+                send_response(task_id, symbols);
             },
         }
     }
@@ -293,6 +323,12 @@ pub fn lsp_serve(send_to_query_channel: Sender<QueryRequest>) {
                                 task_id,
                                 file_url: params.text_document.uri,
                                 file_pos: params.position,
+                            });
+                        },
+                        Ok(LspMessage::TextDocSymbols { id: task_id, params }) => {
+                            let _ = send_to_query_channel.send(QueryRequest::FileSymbols {
+                                task_id,
+                                file_url: params.text_document.uri,
                             });
                         },
                         Ok(LspMessage::CancelRequest { .. }) => {}

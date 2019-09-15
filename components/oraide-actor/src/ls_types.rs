@@ -50,10 +50,30 @@ impl From<languageserver_types::Position> for Position {
     }
 }
 
+impl Into<languageserver_types::Position> for Position {
+    fn into(self) -> languageserver_types::Position {
+        languageserver_types::Position {
+            line: self.line_idx as u64,
+            character: self.character_idx as u64,
+        }
+    }
+}
+
 #[derive(Debug, Eq, PartialEq, Ord, PartialOrd, Clone, Hash, Deserialize, Serialize)]
 pub struct Range<T> {
     pub start: T,
     pub end_exclusive: T,
+}
+
+impl<T> From<Range<T>> for languageserver_types::Range
+    where T: Into<languageserver_types::Position>
+{
+    fn from(range: Range<T>) -> Self {
+        Self {
+            start: range.start.into(),
+            end: range.end_exclusive.into(),
+        }
+    }
 }
 
 #[derive(Debug, Eq, PartialEq, Ord, PartialOrd, Clone, Hash)]
@@ -81,6 +101,45 @@ impl RangedFilePosition {
                 start: range_start,
                 end_exclusive: range_end_exclusive,
             }
+        }
+    }
+}
+
+impl Into<languageserver_types::Location> for RangedFilePosition {
+    fn into(self) -> languageserver_types::Location {
+        languageserver_types::Location {
+            uri: self.file_url,
+            range: languageserver_types::Range {
+                start: self.range.start.into(),
+                end: self.range.end_exclusive.into(),
+            },
+        }
+    }
+}
+
+/// `DocumentSymbol` in https://microsoft.github.io/language-server-protocol/specification#textDocument_documentSymbol
+#[derive(Debug, Eq, PartialEq, Ord, PartialOrd, Clone, Hash)]
+pub struct Symbol {
+    pub name: String,
+    pub detail: Option<String>,
+    pub range: Range<Position>,
+    pub children: Option<Vec<Self>>,
+}
+
+impl From<Symbol> for languageserver_types::DocumentSymbol {
+    fn from(sym: Symbol) -> Self {
+        Self {
+            name: sym.name,
+            detail: sym.detail,
+            kind: languageserver_types::SymbolKind::Object,
+            range: sym.range.clone().into(),
+            selection_range: sym.range.into(),
+            deprecated: None,
+            children: sym.children.map(|children|
+                children.into_iter()
+                    .map(|sym| sym.into())
+                    .collect()
+            )
         }
     }
 }

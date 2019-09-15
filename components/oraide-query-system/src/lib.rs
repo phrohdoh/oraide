@@ -242,6 +242,30 @@ impl QuerySystem {
 
                 self.db.set_file_text(file_id, current_contents.into());
             },
+            QueryRequest::FileSymbols { task_id, file_url } => {
+                thread::spawn({
+                    let db = self.db.snapshot();
+                    let chan = self.send_channel.clone();
+
+                    move || {
+                        let file_id = match db.file_id_of_file_path(file_url.to_string()) {
+                            Some(id) => id,
+                            _ => {
+                                send(chan, QueryResponse::Nothing { task_id });
+                                return;
+                            },
+                        };
+
+                        match db.symbols_in_file(file_id, false) {
+                            Some(symbols) => send(chan, QueryResponse::DocumentSymbols {
+                                task_id,
+                                symbols,
+                            }),
+                            _ => send(chan, QueryResponse::Nothing { task_id }),
+                        }
+                    }
+                });
+            },
         }
     }
 }
