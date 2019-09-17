@@ -309,7 +309,7 @@ fn symbols_in_file(
         let iter = tree.node_ids.iter().skip(1); // skip the sentinel
         let tups = iter.filter_map(|arena_node_id|
             tree.arena.get(*arena_node_id)
-                .map(|shrd_arena_node| (arena_node_id, &shrd_arena_node.data))
+                .map(|shrd_arena_node| (arena_node_id, shrd_arena_node.get()))
         );
 
         let tups = tups.filter(|(_arena_node_id, shrd_node)|
@@ -343,7 +343,7 @@ mod helpers {
         arena_node_id: oraide_parser_miniyaml::ArenaNodeId,
         top_level_only: bool,
     ) -> Option<Symbol> {
-        let shrd_node = &shrd_arena.get(arena_node_id)?.data;
+        let shrd_node = &shrd_arena.get(arena_node_id)?.get();
         let name = shrd_node.key_text(file_text)?.to_owned();
         let span = shrd_node.span()?;
         let (start, end_exclusive) = db.convert_file_span_to_2_positions(span)?;

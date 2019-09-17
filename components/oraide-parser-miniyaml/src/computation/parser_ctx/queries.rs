@@ -74,12 +74,12 @@ pub(crate) fn all_top_level_nodes_in_file(
     let tree = db.file_tree(file_id)?;
 
     let top_level_nodes: Vec<_> = tree.node_ids.iter().skip(1) // skip the sentinel
-        .filter_map(|arena_node_id| tree.arena.get(*arena_node_id).map(|shrd_arena_node| &shrd_arena_node.data))
+        .filter_map(|arena_node_id| tree.arena.get(*arena_node_id).map(|shrd_arena_node| shrd_arena_node.get()))
         .filter(|shrd_node| shrd_node.is_top_level() && shrd_node.has_key())
         .map(|shrd_node| shrd_node.clone())
         .collect();
 
-    top_level_nodes.into()
+    Some(top_level_nodes)
 }
 
 pub(crate) fn top_level_nodes_in_all_files(

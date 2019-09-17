@@ -230,14 +230,7 @@ impl<'text, I: Iterator<Item = Node>> Treeizer<'text, I> {
                     // TODO:diag );
 
                     let node_id = arena.new_node(node);
-                    if let Err(e) = parentless_sentinel_node_id.append(node_id, &mut arena) {
-                        log::error!(
-                            "Got an error attempting to make `{}` a child of `{}`: {:?}",
-                            node_id,
-                            parentless_sentinel_node_id,
-                            e
-                        );
-                    }
+                    parentless_sentinel_node_id.append(node_id, &mut arena);
 
                     // Since the indentation is bogus there is no reason
                     // to attempt to determine the parent (it'd just be a waste of cycles
@@ -285,7 +278,7 @@ impl<'text, I: Iterator<Item = Node>> Treeizer<'text, I> {
                             },
                         };
 
-                        match IndentLevelDelta::nodes(&shrd_last_parent_node.data, &node) {
+                        match IndentLevelDelta::nodes(&shrd_last_parent_node.get(), &node) {
                             IndentLevelDelta::NoChange => {
                                 let _sibling_id = parent_node_ids.pop(); // remove the sibling's ID
                                 // TODO:diag let node_span_opt = node.span();
@@ -293,7 +286,7 @@ impl<'text, I: Iterator<Item = Node>> Treeizer<'text, I> {
 
                                 match parent_node_ids.last() {
                                     Some(shrd_last_parent_node_id) => {
-                                        if let Err(e) = shrd_last_parent_node_id.append(node_id, &mut arena) {
+                                        if let Err(e) = shrd_last_parent_node_id.checked_append(node_id, &mut arena) {
                                             let err_msg = format!(
                                                 "Got an error attempting to make `{}` a child of `{}`: {:?}",
                                                 node_id,
@@ -367,7 +360,7 @@ impl<'text, I: Iterator<Item = Node>> Treeizer<'text, I> {
                                 parent_node_ids.push(node_id);
                                 all_node_ids.push(node_id);
 
-                                if let Err(e) = last_parent_node_id.append(node_id, &mut arena) {
+                                if let Err(e) = last_parent_node_id.checked_append(node_id, &mut arena) {
                                     log::error!(
                                         "Got an error attempting to make `{}` a child of `{}`: {:?}",
                                         node_id,
@@ -390,7 +383,7 @@ impl<'text, I: Iterator<Item = Node>> Treeizer<'text, I> {
                                     let mut iter = parent_node_ids.iter().rev();
                                     iter.find(|&&id| {
                                         let shrd_iter_node = match arena.get(id) {
-                                            Some(n) => &n.data,
+                                            Some(n) => n.get(),
                                             _ => return false,
                                         };
 
@@ -411,7 +404,7 @@ impl<'text, I: Iterator<Item = Node>> Treeizer<'text, I> {
                                     parent_node_ids.push(node_id);
                                     all_node_ids.push(node_id);
 
-                                    if let Err(e) = parent_node_id.append(node_id, &mut arena) {
+                                    if let Err(e) = parent_node_id.checked_append(node_id, &mut arena) {
                                         let err_msg = format!(
                                             "Got an error attempting to make `{}` a child of `{}`: {:?}",
                                             node_id,
@@ -450,14 +443,7 @@ impl<'text, I: Iterator<Item = Node>> Treeizer<'text, I> {
                         parent_node_ids.push(node_id);
                         all_node_ids.push(node_id);
 
-                        if let Err(e) = parentless_sentinel_node_id.append(node_id, &mut arena) {
-                            log::error!(
-                                "Got an error attempting to make `{}` a child of `{}`: {:?}",
-                                node_id,
-                                parentless_sentinel_node_id,
-                                e
-                            );
-                        }
+                        parentless_sentinel_node_id.append(node_id, &mut arena);
                     },
                 }
             } else {
@@ -481,7 +467,7 @@ impl<'text, I: Iterator<Item = Node>> Treeizer<'text, I> {
 
         /*
         for parentless_arena_node in parentless_sentinel_node_id.children(&arena).filter_map(|id| arena.get(id)) {
-            let n = &parentless_arena_node.data;
+            let n = &parentless_arena_node.get();
             if let Some(span) = n.span() {
                 self.add_diagnostic(
                     Diagnostic::new_error("Unable to determine parent for this node, please address any prior errors and try again")

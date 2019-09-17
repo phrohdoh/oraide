@@ -11,7 +11,7 @@ oraide-actor = { path = "../oraide-actor" }
 salsa = "^0.12"
 itertools = "^0.8"
 log = "^0.4"
-indextree = { version = "^3", features = ["derive-eq"] }
+indextree = "^4"
 
 [dev-dependencies]
 unindent = "^0.1"
