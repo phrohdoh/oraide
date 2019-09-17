@@ -271,6 +271,7 @@ fn definition_position_in_file(
         _ => token_text.into(),
     };
 
+    // TODO: Search _all_ relevant files, not just the explicitly-opened ones.
     let file_ids = db.all_file_ids();
 
     for f_id in file_ids {
