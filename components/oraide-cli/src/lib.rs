@@ -41,6 +41,7 @@ use commands::{
     Parse,
     FindDefinition,
     Hover,
+    ListGames,
 };
 
 mod ide;
@@ -160,6 +161,21 @@ pub fn main() {
                 _ => eprintln!("Please provide a file path to lint"),
             }
         },
+        "list-games" => {
+            let root_dir: PathBuf = match args.next() {
+                Some(path) => path.into(),
+                _ => {
+                    eprintln!();
+                    eprintln!("Please provide the <root-dir> parameter (see below for more information)");
+                    eprintln!();
+                    print_usage_instructions();
+                    return;
+                },
+            };
+
+            let list_games = ListGames::new_with_root_dir(root_dir);
+            list_games.run();
+        },
         other => {
             eprintln!("!!! got `{}`", other);
             print_usage_instructions();
@@ -169,11 +185,12 @@ pub fn main() {
 
 fn print_usage_instructions() {
     eprintln!("Usage:");
-    eprintln!("  ora ide                                                                - run the OpenRA language server / IDE support");
-    eprintln!("  ora parse     <file-path>                                              - print all definitions (top-level items) in a file");
-    eprintln!("  ora find-defs <project-root-path> <item-name>                          - find all definitions with name <item-name> in <project-root-path>");
-    eprintln!("  ora hover     <root-dir> <rel-file-path> <line-number> <column-number> - print hover data for the token at <root-dir>/<rel-file-path>:<line-number>:<column-number>");
+    eprintln!("  ora ide                                                                 - run the OpenRA language server / IDE support");
+    eprintln!("  ora parse      <file-path>                                              - print all definitions (top-level items) in a file");
+    eprintln!("  ora find-defs  <project-root-path> <item-name>                          - find all definitions with name <item-name> in <project-root-path>");
+    eprintln!("  ora hover      <root-dir> <rel-file-path> <line-number> <column-number> - print hover data for the token at <root-dir>/<rel-file-path>:<line-number>:<column-number>");
     eprintln!("    example: ora hover /path/to/project/root/dir rules/infantry.yaml 15 8");
+    eprintln!("  ora list-games <root-dir>                                               - print IDs and names for all games in <root-dir>/mods/");
   //eprintln!("  ora lint <file-path>                                                   - unimplemented");
 }
 

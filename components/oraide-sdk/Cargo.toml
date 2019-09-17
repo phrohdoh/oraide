@@ -6,14 +6,10 @@ edition = "2018"
 build = "build.rs"
 
 [dependencies]
-slog = "2.4.1"
-slog-stdlog = "3.0.2"
-slog-envlogger = "2.1.0"
-slog-term = "2.4.0"
-slog-scope = "4.1.1"
-slog-async = "2.3.0"
 log = "0.4.6"
 itertools = "0.8.0"
+salsa = "^0.12"
+oraide-language-server = { path = "../oraide-language-server" }
 
 [build-dependencies]
 built = "0.3.0"

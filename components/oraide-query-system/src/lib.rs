@@ -45,6 +45,10 @@ use oraide_language_server::{
     LanguageServerCtxStorage,
 };
 
+use oraide_sdk::{
+    SdkCtxStorage,
+};
+
 /// Entrypoint into MiniYaml parsing
 ///
 /// Contains inputs and memoized computation results
@@ -67,6 +71,7 @@ use oraide_language_server::{
     TextFilesCtxStorage,
     ParserCtxStorage,
     LanguageServerCtxStorage,
+    SdkCtxStorage,
 )]
 pub struct OraideDatabase {
     rt: salsa::Runtime<Self>,

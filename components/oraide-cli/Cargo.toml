@@ -8,6 +8,7 @@ edition = "2018"
 [dependencies]
 oraide-span = { path = "../oraide-span" }
 oraide-actor = { path = "../oraide-actor" }
+oraide-sdk = { path = "../oraide-sdk" }
 oraide-query-system = { path = "../oraide-query-system" }
 oraide-parser-miniyaml = { path = "../oraide-parser-miniyaml" }
 oraide-language-server = { path = "../oraide-language-server" }

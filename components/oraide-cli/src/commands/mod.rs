@@ -20,3 +20,6 @@ pub(crate) use find_definition::FindDefinition;
 
 mod hover;
 pub(crate) use hover::Hover;
+
+mod list_games;
+pub(crate) use list_games::ListGames;
