@@ -9,6 +9,8 @@ build = "build.rs"
 log = "0.4.6"
 itertools = "0.8.0"
 salsa = "^0.12"
+oraide-span = { path = "../oraide-span" }
+oraide-parser-miniyaml = { path = "../oraide-parser-miniyaml" }
 oraide-language-server = { path = "../oraide-language-server" }
 
 [build-dependencies]

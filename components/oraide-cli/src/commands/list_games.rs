@@ -46,13 +46,25 @@ impl ListGames {
         let games = self.db.all_games().unwrap();
 
         for game in games {
-            let id = game.id();
+            let game_root = workspace_root.join(game.rel_root_path);
+            let manifest_path = game_root.join("mod.yaml");
 
-            let root = workspace_root.join(format!("mods/{}", id));
-            let manifest_path = root.join("mod.yaml");
-
-            println!("{}:", id);
+            println!("{}:", game.id);
             println!("  manifest: {}", manifest_path.display());
+            println!("     rules:");
+
+            let resolved_rule_file_paths = match self.db.resolved_rule_file_paths_for_game(game.id.clone()) {
+                Some(paths) => paths,
+                _ => {
+                    eprintln!("            Failed to get resolved rule file paths for `{}`", game.id);
+                    continue;
+                },
+            };
+
+            for path in resolved_rule_file_paths {
+                println!("            {}", path.display());
+            }
+
             println!();
         }
     }

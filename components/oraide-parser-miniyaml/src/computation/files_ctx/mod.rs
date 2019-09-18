@@ -56,7 +56,7 @@ pub trait FilesCtx: salsa::Database {
 }
 
 pub trait FilesCtxExt: FilesCtx {
-    fn init(&mut self) {
+    fn init_empty_file_ids(&mut self) {
         self.set_all_file_ids(Default::default());
     }
 }

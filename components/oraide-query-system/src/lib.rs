@@ -89,7 +89,7 @@ impl Default for OraideDatabase {
             rt: salsa::Runtime::default(),
         };
 
-        db.init();
+        db.init_empty_file_ids();
         db
     }
 }

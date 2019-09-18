@@ -14,7 +14,9 @@
 
 use {
     std::{
+        fmt,
         ops::Deref,
+        path::PathBuf,
     }
 };
 
@@ -26,6 +28,12 @@ pub use sdk_ctx::{
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct GameId(String);
+
+impl fmt::Display for GameId {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
 
 impl Deref for GameId {
     type Target = str;
@@ -44,33 +52,51 @@ impl From<String> for GameId {
 /// A "mod" in OpenRA terms.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct Game {
-    id: GameId,
+    pub id: GameId,
+
+    /// The workspace root-relative path to this `Game`'s root directory.
+    ///
+    /// # Example
+    ///
+    /// Assume the following file structure.
+    ///
+    /// ```
+    /// <workspace root>
+    /// ├── artsrc
+    /// ├── engine
+    /// │  └── mods
+    /// │     ├── all
+    /// │     │  └── mod.yaml
+    /// │     ├── cnc
+    /// │     │  └── mod.yaml
+    /// │     └── ra
+    /// │        └── mod.yaml
+    /// ├── LICENSE
+    /// ├── mod.config
+    /// ├── mods
+    /// │  ├── bar
+    /// │  │  ├── mod.yaml
+    /// │  │  └── rules
+    /// │  │     └── civilian-structures.yaml
+    /// │  └── foo
+    /// │     └── mod.yaml
+    /// └── packaging
+    /// ```
+    ///
+    /// For the `cnc` game this would be `engine/mods/cnc/`.
+    /// For the `bar` game this would be `mods/bar/`.
+    /// For the `foo` game this would be `mods/foo/`.
+    pub rel_root_path: PathBuf,
 }
 
 impl Game {
-    pub fn id(&self) -> &str {
-        &self.id
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::{
-        Game,
-        GameId,
-    };
-
-    #[test]
-    fn game_id_fn_returns_id() {
-        // Arrange
-        let game = Game {
-            id: GameId("foo".into()),
-        };
-
-        // Act
-        let id = game.id();
-
-        // Assert
-        assert_eq!("foo", id);
+    pub fn new(
+        id: GameId,
+        rel_root_path: PathBuf,
+    ) -> Self {
+        Self {
+            id,
+            rel_root_path,
+        }
     }
 }

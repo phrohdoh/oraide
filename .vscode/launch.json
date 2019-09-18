@@ -18,5 +18,16 @@
             "pid": "${command:pickProcess}",
             "sourceLanguages": ["rust"]
         },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "`ora list-games ...`",
+            "program": "${workspaceRoot}/target/debug/ora",
+            "args": [
+                "list-games",
+                "/Users/taryn/src/_"
+            ],
+            "cwd": "${workspaceFolder}"
+        },
     ]
 }

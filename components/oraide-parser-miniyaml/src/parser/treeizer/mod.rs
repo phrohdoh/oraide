@@ -58,6 +58,27 @@ impl Tree {
             arena,
         }
     }
+
+    /// Find the `ArenaNodeId` of the `Node` that satisfies `predicate`
+    pub fn find_node<P>(&self, mut predicate: P) -> Option<ArenaNodeId>
+        where P: FnMut(&&Node) -> bool
+    {
+        let mut iter = self.node_ids.iter().skip(1) // skip the sentinel
+            .filter_map(|arena_node_id| {
+                let arena_node_opt: Option<_> = self.arena.get(*arena_node_id);
+                let node_opt: Option<&Node> = arena_node_opt.map(|arena_node| arena_node.get());
+                let tup_opt: Option<(ArenaNodeId, _)> = node_opt.map(|node|
+                    (*arena_node_id, node)
+                );
+
+                tup_opt
+            });
+
+        let found_arena_node_id_opt = iter.find(|(_arena_node_id, node)| predicate(node))
+            .map(|(arena_node_id, _node)| arena_node_id);
+
+        found_arena_node_id_opt
+    }
 }
 
 /// Used to store/calculate indentation level delta between two *thing*s
