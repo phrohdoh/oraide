@@ -3,6 +3,17 @@
 A collection of tools with the aim of lowering the barrier to entry for
 [OpenRA]-based game development.
 
+# ARCHIVED
+
+My personal life is changing and as a result I have less time than ever to spend
+on OpenRA.  I _may_, at some unknown point in the future, come back to OpenRA
+for some time here and there.  Please feel free to fork and continue this work
+without me.
+
+The codebase is not well tested and should probably be rewritten from scratch
+via TDD.  This was a great learning experience and I hope one day it helps
+developers / game makers / modders / etc.
+
 ## Screenshots
 
 <details>
