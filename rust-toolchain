@@ -1,0 +1,5 @@
+1.45.2
+# no particular reason we're pinned to 1.45.2, it just happens to be the stable
+# I was using at the time of writing
+
+# ref https://github.com/rust-lang/rustup#the-toolchain-file

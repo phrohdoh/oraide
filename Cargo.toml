@@ -1,0 +1,9 @@
+[package]
+name = "oraide"
+version = "0.1.0"
+authors = ["Taryn Hill <taryn+openra_oraide@phrohdoh.com>"]
+edition = "2018"
+
+[[bin]]
+name = "oraide"
+path = "src/main.rs"
