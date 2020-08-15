@@ -18,6 +18,12 @@ pub struct ComponentizedLine {
 #[derive(Debug, PartialEq, Copy, Clone)]
 pub struct ByteIdx(usize);
 
+impl ByteIdx {
+    pub fn as_inner(&self) -> usize {
+        self.0
+    }
+}
+
 /// low-inclusive, high-exclusive byte index span
 #[derive(Debug, PartialEq, Copy, Clone)]
 pub struct ByteIdxSpan(
@@ -53,6 +59,24 @@ impl From<(ByteIdx, ByteIdx)> for ByteIdxSpan {
     }
 }
 
+impl From<ByteIdxSpan> for std::ops::Range<usize> {
+    fn from(bx_span: ByteIdxSpan) -> Self {
+        Self {
+            start: (bx_span.0).0,
+            end: (bx_span.1).0,
+        }
+    }
+}
+
+impl From<ByteIdxSpan> for (usize, usize) {
+    fn from(bx_span: ByteIdxSpan) -> Self {
+        (
+            (bx_span.0).0,
+            (bx_span.1).0,
+        )
+    }
+}
+
 /// A document composed of the following "raw" lines
 /// ```plaintext
 /// hello\n
@@ -78,6 +102,14 @@ impl IntermediateRawSpannedLine {
     }
 }
 
+/// `0` - line start absolute byte index
+///
+/// `1` - spanned line components
+type DetailedComponentizedLine = (
+    ByteIdx,
+    ComponentizedLine,
+);
+
 /// ## lifetimes
 /// - `lxr_src`: the lifetime of the borrowed string that is being lexed
 pub struct MiniYamlLexer<'lxr_src> {
@@ -94,7 +126,7 @@ impl<'lxr_src> MiniYamlLexer<'lxr_src> {
         }
     }
 
-    pub fn lex(self) -> Vec<ComponentizedLine> {
+    pub fn lex(self) -> Vec<DetailedComponentizedLine> {
         let lines_and_raw_spanned_lines_tup2 =
             Self::_split_into_lines_retaining_line_terms(self._src)
             .into_iter()
@@ -119,12 +151,15 @@ impl<'lxr_src> MiniYamlLexer<'lxr_src> {
             })
             .collect::<Vec<_>>();
 
-        let comp_lines = lines_and_raw_spanned_lines_tup2.into_iter()
-            .map(|(line, raw_spanned_line)|
-                self._componentize_line(raw_spanned_line, line))
+        let detailed_comp_lines = lines_and_raw_spanned_lines_tup2.into_iter()
+            .map(|(line, raw_spanned_line)| {
+                let line_start_abs_bx = raw_spanned_line.raw.0;
+                let comp_line = self._componentize_line(raw_spanned_line, line);
+                (line_start_abs_bx, comp_line)
+            })
             .collect::<Vec<_>>();
 
-        comp_lines
+        detailed_comp_lines
     }
 
     fn _split_into_lines_retaining_line_terms(doc: &str) -> Vec<IntermediateRawSpannedLine> {
@@ -215,7 +250,8 @@ impl<'lxr_src> MiniYamlLexer<'lxr_src> {
 
         let is_line_whitespace_only = !is_line_empty && line.trim().is_empty();
         if is_line_whitespace_only {
-            let opt_indent_span = ByteIdxSpan(0.into(), line_end_abs_bx).into();
+            let indent_end_abs_bx = raw_spanned_line.term.map(|term_span| term_span.0).unwrap_or(line_end_abs_bx);
+            let opt_indent_span = ByteIdxSpan(line_start_abs_bx, indent_end_abs_bx).into();
             ret.indent = opt_indent_span;
             return ret;
         }
@@ -512,6 +548,53 @@ mod tests {
     }
 
     #[test]
+    fn whitespace_only_lines_componentize_with_correct_start_and_end() {
+        // arrange
+        let input_miniyaml_doc = vec![
+            "	 \n",
+            " 	\n",
+            "	\r\n",
+            " \r",
+        ].join("");
+
+        let expected_indent_spans = [
+            Some((0, 2)),
+            Some((3, 5)),
+            Some((6, 7)),
+            Some((9, 10)),
+        ].iter()
+        .map(|opt_span_tup2| opt_span_tup2.and_then(|(start, end)| ByteIdxSpan(start.into(), end.into()).into()))
+        .collect::<Vec<_>>();
+
+        // act
+        let detailed_comp_lines = MiniYamlLexer::new_from_str(&input_miniyaml_doc).lex();
+        let actual_indent_spans = detailed_comp_lines.into_iter()
+            .map(|(_, comp_line)| comp_line.indent)
+            .collect::<Vec<_>>();
+
+        // assert
+        assert_eq!(
+            expected_indent_spans,
+            actual_indent_spans,
+        );
+    }
+
+    /* TODO: makes diagnostic reporting easier (can easily calculate column number from `raw`)
+    #[test]
+    fn comp_line_contains_raw() {
+        let _ = ComponentizedLine {
+            raw: ByteIdxSpan(ByteIdx(0), ByteIdx(15)),
+            indent: None,
+            key: None,
+            key_sep: None,
+            value: None,
+            comment: None,
+            term: None,
+        };
+    }
+    */
+
+    #[test]
     fn lexer_given_doc_with_only_lf_returns_single_comp_line_with_term_set() {
         // arrange
         let input_miniyaml_doc = vec![
@@ -530,7 +613,10 @@ mod tests {
         ];
 
         // act
-        let actual_comp_lines = MiniYamlLexer::new_from_str(&input_miniyaml_doc).lex();
+        let detailed_comp_lines = MiniYamlLexer::new_from_str(&input_miniyaml_doc).lex();
+        let actual_comp_lines = detailed_comp_lines.into_iter()
+            .map(|(_, comp_line)| comp_line)
+            .collect::<Vec<_>>();
 
         // assert
         assert_eq!(
@@ -558,7 +644,10 @@ mod tests {
         ];
 
         // act
-        let actual_comp_lines = MiniYamlLexer::new_from_str(&input_miniyaml_doc).lex();
+        let detailed_comp_lines = MiniYamlLexer::new_from_str(&input_miniyaml_doc).lex();
+        let actual_comp_lines = detailed_comp_lines.into_iter()
+            .map(|(_, comp_line)| comp_line)
+            .collect::<Vec<_>>();
 
         // assert
         assert_eq!(
@@ -586,7 +675,10 @@ mod tests {
         ];
 
         // act
-        let actual_comp_lines = MiniYamlLexer::new_from_str(&input_miniyaml_doc).lex();
+        let detailed_comp_lines = MiniYamlLexer::new_from_str(&input_miniyaml_doc).lex();
+        let actual_comp_lines = detailed_comp_lines.into_iter()
+            .map(|(_, comp_line)| comp_line)
+            .collect::<Vec<_>>();
 
         // assert
         assert_eq!(
@@ -614,7 +706,10 @@ mod tests {
         ];
 
         // act
-        let actual_comp_lines = MiniYamlLexer::new_from_str(&input_miniyaml_doc).lex();
+        let detailed_comp_lines = MiniYamlLexer::new_from_str(&input_miniyaml_doc).lex();
+        let actual_comp_lines = detailed_comp_lines.into_iter()
+            .map(|(_, comp_line)| comp_line)
+            .collect::<Vec<_>>();
 
         // assert
         assert_eq!(
@@ -642,7 +737,10 @@ mod tests {
         ];
 
         // act
-        let actual_comp_lines = MiniYamlLexer::new_from_str(&input_miniyaml_doc).lex();
+        let detailed_comp_lines = MiniYamlLexer::new_from_str(&input_miniyaml_doc).lex();
+        let actual_comp_lines = detailed_comp_lines.into_iter()
+            .map(|(_, comp_line)| comp_line)
+            .collect::<Vec<_>>();
 
         // assert
         assert_eq!(
@@ -671,7 +769,10 @@ mod tests {
         ];
 
         // act
-        let actual_comp_lines = MiniYamlLexer::new_from_str(&input_miniyaml_doc).lex();
+        let detailed_comp_lines = MiniYamlLexer::new_from_str(&input_miniyaml_doc).lex();
+        let actual_comp_lines = detailed_comp_lines.into_iter()
+            .map(|(_, comp_line)| comp_line)
+            .collect::<Vec<_>>();
 
         // assert
         assert_eq!(
@@ -700,7 +801,10 @@ mod tests {
         ];
 
         // act
-        let actual_comp_lines = MiniYamlLexer::new_from_str(&input_miniyaml_doc).lex();
+        let detailed_comp_lines = MiniYamlLexer::new_from_str(&input_miniyaml_doc).lex();
+        let actual_comp_lines = detailed_comp_lines.into_iter()
+            .map(|(_, comp_line)| comp_line)
+            .collect::<Vec<_>>();
 
         // assert
         assert_eq!(
@@ -728,7 +832,10 @@ mod tests {
         ];
 
         // act
-        let actual_comp_lines = MiniYamlLexer::new_from_str(&input_miniyaml_doc).lex();
+        let detailed_comp_lines = MiniYamlLexer::new_from_str(&input_miniyaml_doc).lex();
+        let actual_comp_lines = detailed_comp_lines.into_iter()
+            .map(|(_, comp_line)| comp_line)
+            .collect::<Vec<_>>();
 
         // assert
         assert_eq!(
@@ -756,7 +863,10 @@ mod tests {
         ];
 
         // act
-        let actual_comp_lines = MiniYamlLexer::new_from_str(&input_miniyaml_doc).lex();
+        let detailed_comp_lines = MiniYamlLexer::new_from_str(&input_miniyaml_doc).lex();
+        let actual_comp_lines = detailed_comp_lines.into_iter()
+            .map(|(_, comp_line)| comp_line)
+            .collect::<Vec<_>>();
 
         // assert
         assert_eq!(
@@ -784,7 +894,10 @@ mod tests {
         ];
 
         // act
-        let actual_comp_lines = MiniYamlLexer::new_from_str(&input_miniyaml_doc).lex();
+        let detailed_comp_lines = MiniYamlLexer::new_from_str(&input_miniyaml_doc).lex();
+        let actual_comp_lines = detailed_comp_lines.into_iter()
+            .map(|(_, comp_line)| comp_line)
+            .collect::<Vec<_>>();
 
         // assert
         assert_eq!(
@@ -812,7 +925,10 @@ mod tests {
         ];
 
         // act
-        let actual_comp_lines = MiniYamlLexer::new_from_str(&input_miniyaml_doc).lex();
+        let detailed_comp_lines = MiniYamlLexer::new_from_str(&input_miniyaml_doc).lex();
+        let actual_comp_lines = detailed_comp_lines.into_iter()
+            .map(|(_, comp_line)| comp_line)
+            .collect::<Vec<_>>();
 
         // assert
         assert_eq!(
@@ -840,7 +956,10 @@ mod tests {
         ];
 
         // act
-        let actual_comp_lines = MiniYamlLexer::new_from_str(&input_miniyaml_doc).lex();
+        let detailed_comp_lines = MiniYamlLexer::new_from_str(&input_miniyaml_doc).lex();
+        let actual_comp_lines = detailed_comp_lines.into_iter()
+            .map(|(_, comp_line)| comp_line)
+            .collect::<Vec<_>>();
 
         // assert
         assert_eq!(
@@ -923,7 +1042,10 @@ mod tests {
         ];
 
         // act
-        let actual_comp_lines = MiniYamlLexer::new_from_str(&input_miniyaml_doc).lex();
+        let detailed_comp_lines = MiniYamlLexer::new_from_str(&input_miniyaml_doc).lex();
+        let actual_comp_lines = detailed_comp_lines.into_iter()
+            .map(|(_, comp_line)| comp_line)
+            .collect::<Vec<_>>();
 
         // assert
         assert_eq!(

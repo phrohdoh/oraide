@@ -4,6 +4,10 @@ version = "0.1.0"
 authors = ["Taryn Hill <taryn+openra_oraide@phrohdoh.com>"]
 edition = "2018"
 
+[dependencies] # todo: make bin a separate crate so deps can be independent
+ansi_term = "0.12"
+codespan-reporting = "0.9.5"
+
 [[bin]]
 name = "oraide"
 path = "src/main.rs"

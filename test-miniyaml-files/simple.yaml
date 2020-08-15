@@ -1,6 +1,7 @@
 E2:
-    Inherits: ^Soldier
-    Inherits@experience: ^GainsExperience
-	Valued:
-		# Cost: 200
-		Cost: 200
+	 Inherits: ^Soldier
+ 	Inherits@experience: ^GainsExperience
+ Valued:
+  Cost: 200
+
+   	
