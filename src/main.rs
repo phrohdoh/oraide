@@ -39,17 +39,22 @@ fn main() {
         std::process::exit(3);
     }
 
-    let lexer = MiniYamlLexer::new_from_str(&miniyaml_text);
-    let comp_lines = lexer.lex();
+    let lines = lex_miniyaml_document(&miniyaml_text);
 
-    for comp_line in comp_lines {
-        let opt_indent_txt = comp_line.indent.map(|span| &miniyaml_text[span]);
-        let opt_key_txt = comp_line.key.map(|span| &miniyaml_text[span]);
-        let opt_key_sep_txt = comp_line.key_sep.map(|span| &miniyaml_text[span]);
-        let opt_value_txt = comp_line.value.map(|span| &miniyaml_text[span]);
-        let opt_comment_txt = comp_line.comment.map(|span| &miniyaml_text[span]);
-        let opt_term_txt = comp_line.term.map(|span| &miniyaml_text[span]);
+    let map_opt_span_to_txt = |opt_span: Option<AbsByteIdxSpan>| -> Option<&str> {
+        opt_span.map(|span| &miniyaml_text[span])
+    };
 
+    for line in lines {
+        let raw_txt = &miniyaml_text[line.raw];
+        let opt_indent_txt = map_opt_span_to_txt(line.indent);
+        let opt_key_txt = map_opt_span_to_txt(line.key);
+        let opt_key_sep_txt = map_opt_span_to_txt(line.key_sep);
+        let opt_value_txt = map_opt_span_to_txt(line.value);
+        let opt_comment_txt = map_opt_span_to_txt(line.comment);
+        let opt_term_txt = map_opt_span_to_txt(line.term);
+
+        println!("raw     = {:?}", raw_txt);
         println!("indent  = {:?}", opt_indent_txt);
         println!("key     = {:?}", opt_key_txt);
         println!("key_sep = {:?}", opt_key_sep_txt);

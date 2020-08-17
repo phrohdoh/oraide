@@ -4,246 +4,363 @@
 // copyright (c)
 // - 2020 Taryn "Phrohdoh" Hill
 
-#[derive(Debug, PartialEq)]
-pub struct ComponentizedLine {
-    pub indent: Option<ByteIdxSpan>,
-    pub key: Option<ByteIdxSpan>,
-    pub key_sep: Option<ByteIdxSpan>,
-    pub value: Option<ByteIdxSpan>,
-    pub comment: Option<ByteIdxSpan>,
-    pub term: Option<ByteIdxSpan>,
+#![deny(missing_docs)]
+
+//! Use the `lex_miniyaml_document` function to [lex] a [MiniYaml] document
+//! into a collection of [`Lexedline`]s, from which a tree can be
+//! constructed or, before that is implemented, basic line-based linting
+//! could be performed.
+//!
+//! [lex]: https://en.wikipedia.org/wiki/Lexical_analysis
+//! [MiniYaml]: https://www.openra.net/book/glossary.html#miniyaml
+
+// ----- public interface ------------------------------------------------------
+
+/// A spanned-line, comprised of `raw` (spanning the *entire* line, including
+/// indentation and the line-terminator sequence if any is present) and
+/// sub-spans which `raw` contains
+#[derive(PartialEq)]
+#[cfg_attr(test, derive(Debug))]
+pub struct LexedLine {
+    /// absolutely-positioned span of the entire line
+    /// (spans over all the other fields)
+    pub raw: AbsByteIdxSpan,
+
+    /// absolutely-positioned span of the line's indentation, if it exists
+    pub indent: Option<AbsByteIdxSpan>,
+
+    /// absolutely-positioned span of the line's key, if it exists
+    pub key: Option<AbsByteIdxSpan>,
+
+    /// absolutely-positioned span of the line's key-separator, if it exists,
+    /// which isn't required to have a key, but is required to have a value
+    pub key_sep: Option<AbsByteIdxSpan>,
+
+    /// absolutely-positioned span of the line's "value", if it exists
+    /// (MiniYaml is comprised of key-value lines)
+    pub value: Option<AbsByteIdxSpan>,
+
+    /// absolutely-positioned span of the line's comment, if it exists
+    pub comment: Option<AbsByteIdxSpan>,
+
+    /// absolutely-positioned span of the line's terminator, if it exists
+    pub term: Option<AbsByteIdxSpan>,
 }
 
-/// 0-based
-#[derive(Debug, PartialEq, Copy, Clone)]
-pub struct ByteIdx(usize);
+/// low-inclusive, high-exclusive span of absolute byte indices
+#[derive(Copy, Clone, PartialEq)]
+#[cfg_attr(test, derive(Debug))]
+pub struct AbsByteIdxSpan {
+    start: AbsByteIdx,
+    end: AbsByteIdx,
+}
 
-/// low-inclusive, high-exclusive byte index span
-#[derive(Debug, PartialEq, Copy, Clone)]
-pub struct ByteIdxSpan(
-    ByteIdx,
-    ByteIdx,
-);
+/// absolute byte index
+#[derive(Copy, Clone, PartialEq)]
+#[cfg_attr(test, derive(Debug))]
+pub struct AbsByteIdx(usize);
 
-impl std::ops::Index<ByteIdxSpan> for String {
+/// Lex a MiniYaml document/file into a collection of componentized,
+/// spanned lines
+pub fn lex_miniyaml_document(
+    doc: &'_ str,
+) -> Vec<LexedLine> {
+    let lexer = Lexer::new(doc);
+    lexer.lex()
+}
+
+// ----- external trait impls --------------------------------------------------
+
+impl std::ops::Index<AbsByteIdxSpan> for String {
     type Output = str;
-
-    fn index(&self, index: ByteIdxSpan) -> &Self::Output {
-        let start_abs_idx = (index.0).0;
-        let end_abs_idx = (index.1).0;
-        &self[start_abs_idx..end_abs_idx]
+    fn index(&self, span: AbsByteIdxSpan) -> &Self::Output {
+        &self[span.start.0 .. span.end.0]
     }
 }
 
-impl From<usize> for ByteIdx {
-    fn from(idx: usize) -> Self {
-        Self(idx)
+impl std::ops::Index<AbsByteIdxSpan> for str {
+    type Output = Self;
+    fn index(&self, span: AbsByteIdxSpan) -> &Self::Output {
+        &self[span.start.0 .. span.end.0]
     }
 }
 
-impl From<(usize, usize)> for ByteIdxSpan {
+impl From<AbsByteIdxSpan> for (usize, usize) {
+    fn from(span: AbsByteIdxSpan) -> Self {
+        (
+            span.start.0,
+            span.end.0,
+        )
+    }
+}
+
+impl From<(AbsByteIdx, AbsByteIdx)> for AbsByteIdxSpan {
+    fn from((start, end): (AbsByteIdx, AbsByteIdx)) -> Self {
+        Self {
+            start,
+            end,
+        }
+    }
+}
+
+impl From<(usize, usize)> for AbsByteIdxSpan {
     fn from((start, end): (usize, usize)) -> Self {
-        Self(start.into(), end.into())
+        Self {
+            start: start.into(),
+            end: end.into(),
+        }
     }
 }
 
-impl From<(ByteIdx, ByteIdx)> for ByteIdxSpan {
-    fn from((start, end): (ByteIdx, ByteIdx)) -> Self {
-        Self(start, end)
+impl From<usize> for AbsByteIdx {
+    fn from(abs_idx: usize) -> Self {
+        Self(abs_idx)
     }
 }
 
-/// A document composed of the following "raw" lines
-/// ```plaintext
-/// hello\n
-/// world\r\n
-/// how are you?
-/// ```
-/// Is represented by the following `RawSpannedLine`s
-/// ```plaintext
-/// { raw: ( 0,  6), term: Some(( 5,  6)) }
-/// { raw: ( 6, 13), term: Some((11, 13)) }
-/// { raw: (13, 24), term: None           }
-/// ```
-#[derive(Debug, PartialEq, Clone)]
-struct IntermediateRawSpannedLine {
-    raw: ByteIdxSpan,
-    term: Option<ByteIdxSpan>,
+// ----- private implementation details ----------------------------------------
+
+/// Our implementation of MiniYaml lexing is a 2-stage process:
+///
+/// raw UTF-8 text -> 0+ `RawAndTerm`s -> 0+ `LexedLine`
+///
+/// This type, `RawAndTerm`, is a private, intermediate type used to make the
+/// implementation easier to comprehend than it would be with tuples everywhere.
+struct RawAndTerm {
+    raw: AbsByteIdxSpan,
+    term: Option<AbsByteIdxSpan>,
 }
 
-impl IntermediateRawSpannedLine {
-    fn line_end(&self) -> ByteIdx {
-        self.term.map(|term_span| term_span.0)
-            .unwrap_or(self.raw.1)
+impl RawAndTerm {
+    fn logical_line_end_bx(&self) -> AbsByteIdx {
+        self.term.map(|term| term.start)
+            .unwrap_or(self.raw.end)
     }
 }
 
-/// ## lifetimes
-/// - `lxr_src`: the lifetime of the borrowed string that is being lexed
-pub struct MiniYamlLexer<'lxr_src> {
+struct Lexer<'lxr_src> {
     _src: &'lxr_src str,
 }
 
-const KEY_SEP_CHAR: char = ':';
-const COMMENT_START_CHAR: char = '#';
-
-impl<'lxr_src> MiniYamlLexer<'lxr_src> {
-    pub fn new_from_str(miniyaml_document: &'lxr_src str) -> Self {
-        Self {
-            _src: miniyaml_document,
-        }
+impl<'lxr_src> Lexer<'lxr_src> {
+    fn new(doc: &'lxr_src str) -> Self {
+        Self { _src: doc }
     }
 
-    pub fn lex(self) -> Vec<ComponentizedLine> {
-        let lines_and_raw_spanned_lines_tup2 =
-            Self::_split_into_lines_retaining_line_terms(self._src)
-            .into_iter()
-            .map(|raw_spanned_line| {
-                let line = {
-                    let start_abs_idx = (raw_spanned_line.raw.0).0;
-                    let end_abs_idx = {
-                        // end at the beginning of the term, if present
-                        let opt_term_start_abs_idx = raw_spanned_line.term
-                            .map(|term| (term.0).0);
-                        // otherwise use the end of the 'raw' span, which is the
-                        // end of the line
-                        let raw_end_abs_idx = (raw_spanned_line.raw.1).0;
+    fn lex(&self) -> Vec<LexedLine> {
+        let lines = self.lines();
+        let lexed_lines = lines.into_iter()
+            .map(|raw_and_term| {
+                let line_txt = {
+                    let start_idx = raw_and_term.raw.start.0;
 
-                        opt_term_start_abs_idx.unwrap_or(raw_end_abs_idx)
-                    };
+                    // end at whichever is first, line-term start or raw's end
+                    let end_idx = raw_and_term.term.map(|term| term.start.0)
+                        .unwrap_or(raw_and_term.raw.end.0);
 
-                    &self._src[start_abs_idx..end_abs_idx]
+                    &self._src[start_idx..end_idx]
                 };
 
-                (line, raw_spanned_line)
+                self.componentize_line(raw_and_term, line_txt)
             })
             .collect::<Vec<_>>();
 
-        let comp_lines = lines_and_raw_spanned_lines_tup2.into_iter()
-            .map(|(line, raw_spanned_line)|
-                self._componentize_line(raw_spanned_line, line))
-            .collect::<Vec<_>>();
-
-        comp_lines
+        lexed_lines
     }
 
-    fn _split_into_lines_retaining_line_terms(doc: &str) -> Vec<IntermediateRawSpannedLine> {
-        let mut iter = doc.char_indices().peekable();
+    fn lines(&self) -> Vec<RawAndTerm> {
+        if self._src.is_empty() {
+            return vec![];
+        }
 
         let mut ret = vec![];
-        let mut line_start_abs_bx = ByteIdx(0 /* start at beginning of document */);
 
-        while let Some((ch_start_idx, ch)) = iter.next() {
-            let ch_start_abs_bx = ByteIdx(ch_start_idx);
-            let ch_end_abs_bx = ByteIdx(ch_start_idx + ch.len_utf8());
+        let mut ch_idx_iter = self._src.char_indices().peekable();
+        let mut line_start_abx = 0.into(); // start at beginning of document
 
-            let opt_next_tup2 = iter.peek()
-                // clone to avoid subsequent borrow troubles
-                .map(|tup2| tup2.clone());
+        while let Some((ch_start_abs_idx, ch)) = ch_idx_iter.next() {
+            let ch_start_abx = AbsByteIdx(ch_start_abs_idx);
+            let ch_end_abx = (ch_start_abs_idx + ch.len_utf8()).into();
 
-            let opt_line_term_span_tup2 = match ch {
-                '\n' => Some((ch_start_abs_bx.clone(), ch_end_abs_bx.clone())),
+            let opt_next_tup2 = ch_idx_iter.peek()
+                .map(|tup2| tup2.to_owned());
+
+            let opt_term_span = match ch {
+                '\n' => Some((ch_start_abx, ch_end_abx).into()),
                 '\r' => match opt_next_tup2 {
                     Some((lf_start_abs_idx, '\n')) => {
                         // advance over the `\n`
-                        iter.next();
+                        ch_idx_iter.next();
 
-                        // high-exclusive
-                        let end_abs_idx = lf_start_abs_idx + '\n'.len_utf8();
-
-                        Some((
-                            ch_start_abs_bx,
-                            end_abs_idx.into(),
-                        ))
+                        let lf_end_idx = lf_start_abs_idx + '\n'.len_utf8();
+                        let end_abx = lf_end_idx.into();
+                        let abx_span = AbsByteIdxSpan::from((ch_start_abx, end_abx));
+                        Some(abx_span)
                     },
-                    _ => Some((ch_start_abs_bx, ch_end_abs_bx)),
-                },
+                    _ => Some((ch_start_abx, ch_end_abx).into())
+                }
                 _ => None,
             };
 
-            match (opt_line_term_span_tup2, opt_next_tup2) {
-                (Some(line_term_span), Some(_)) => {
-                    ret.push(IntermediateRawSpannedLine {
-                        raw: ByteIdxSpan(line_start_abs_bx, line_term_span.1.clone()),
-                        term: Some(line_term_span.into()),
-                    });
+            let (raw_span, term_span) = match (opt_term_span, opt_next_tup2) {
+                // terminating the current line, with another line following
+                (Some(term_span), Some(_)) => {
+                    let raw_span = AbsByteIdxSpan::from((
+                        line_start_abx,
+                        term_span.end,
+                    ));
 
-                    line_start_abs_bx = line_term_span.1;
+                    line_start_abx = term_span.end;
+
+                    (raw_span, term_span.into())
                 },
-                (Some(line_term_span), None) => {
-                    ret.push(IntermediateRawSpannedLine {
-                        raw: ByteIdxSpan(line_start_abs_bx, line_term_span.1),
-                        term: Some(line_term_span.into()),
-                    });
+                // end-of-document with trailing line-terminator
+                (Some(term_span), None) => {
+                    let raw_span = (line_start_abx, term_span.end).into();
+                    (raw_span, term_span.into())
                 },
+                // abrupt end-of-document (no trailing line-terminator)
                 (None, None) => {
-                    ret.push(IntermediateRawSpannedLine {
-                        raw: ByteIdxSpan(line_start_abs_bx, ch_end_abs_bx),
-                        term: None,
-                    });
-                },
-                (None, Some(_)) => { /* most likely case */ },
+                    let raw_span = (line_start_abx, ch_end_abx).into();
+                    (raw_span, None)
+                }
+                // not a line-terminator, followed by something
+                (None, Some(_)) => continue,
             };
+
+            ret.push(
+                RawAndTerm {
+                    raw: raw_span,
+                    term: term_span,
+                }
+            );
         }
 
         ret
     }
 
-    /// ## arguments
-    /// `line`: if componentizing `hello\n`, this would be `hello`
-    fn _componentize_line(
+    /// if lexing `hello\n`, `line_txt` would be `hello`
+    fn componentize_line(
         &self,
-        raw_spanned_line: IntermediateRawSpannedLine,
-        line: &'lxr_src str,
-    ) -> ComponentizedLine {
-        let mut ret = ComponentizedLine {
+        raw_and_term: RawAndTerm,
+        line_txt: &'lxr_src str,
+    ) -> LexedLine {
+        let RawAndTerm { raw, term } = raw_and_term;
+
+        let mut ret = LexedLine {
+            raw,
             indent: Default::default(),
             key: Default::default(),
             key_sep: Default::default(),
             value: Default::default(),
             comment: Default::default(),
-            term: raw_spanned_line.term,
+            term,
         };
 
-        let is_line_empty = line.is_empty();
+        let is_line_empty = line_txt.is_empty();
         if is_line_empty {
             return ret;
         }
 
-        let line_start_abs_bx = raw_spanned_line.raw.0;
-        let line_end_abs_bx = raw_spanned_line.line_end();
+        let line_start_abx = raw.start;
+        let logical_line_end_abx = raw_and_term.logical_line_end_bx();
 
-        let is_line_whitespace_only = !is_line_empty && line.trim().is_empty();
-        if is_line_whitespace_only {
-            let opt_indent_span = ByteIdxSpan(0.into(), line_end_abs_bx).into();
-            ret.indent = opt_indent_span;
+        let is_indent_only = line_txt.trim().is_empty();
+        if is_indent_only {
+            let indent_span = AbsByteIdxSpan::from((
+                line_start_abx,
+                logical_line_end_abx,
+            ));
+
+            ret.indent = indent_span.into();
             return ret;
         }
 
-        let first_non_whitespace_rel_idx = line.find(|ch: char| !ch.is_whitespace())
-            .unwrap(/* earlier empty/whitespace-only returns make this safe */);
+        // at this point the easy cases have been handled, so we move onto the
+        // more complex portion of componentizing
 
-        let first_non_whitespace_abs_bx = (
-            line_start_abs_bx.0 + first_non_whitespace_rel_idx
-        ).into();
+        /// a byte index relative to the current line's absolute start position
+        #[derive(Debug, Copy, Clone, PartialEq)]
+        struct RelByteIdx(usize);
 
-        ret.indent = if first_non_whitespace_rel_idx == 0 {
-            None
-        } else {
-            ByteIdxSpan(line_start_abs_bx, first_non_whitespace_abs_bx).into()
+        impl RelByteIdx {
+            #[inline(always)]
+            fn is_start_of_line(&self) -> bool {
+                self.0 == 0
+            }
+        }
+
+        impl From<usize> for RelByteIdx {
+            fn from(rel_idx: usize) -> Self {
+                Self(rel_idx)
+            }
+        }
+
+        impl std::ops::Add<usize> for RelByteIdx {
+            type Output = RelByteIdx;
+
+            fn add(self, rel_idx: usize) -> Self::Output {
+                Self(self.0 + rel_idx)
+            }
+        }
+
+        impl std::ops::Sub<usize> for RelByteIdx {
+            type Output = RelByteIdx;
+
+            fn sub(self, rel_idx: usize) -> Self::Output {
+                Self(self.0 - rel_idx)
+            }
+        }
+
+        impl std::ops::Add<RelByteIdx> for AbsByteIdx {
+            type Output = Self;
+
+            fn add(self, rbx: RelByteIdx) -> Self::Output {
+                Self(self.0 + rbx.0)
+            }
+        }
+
+        // convert a line-relative byte index into an absolutely-positioned byte index
+        let rbx_to_abx = |rbx: RelByteIdx| -> AbsByteIdx {
+            raw.start + rbx
         };
 
-        // TODO: escaped_comment_with_actual_comment_after test
-        let opt_first_comment_start_rel_idx = line.find(COMMENT_START_CHAR);
-        let opt_comment_span = opt_first_comment_start_rel_idx
-            .and_then(|comment_start_rel_idx| {
-                if comment_start_rel_idx == first_non_whitespace_rel_idx {
-                    // entire line from this point onwards is a comment
-                    return ByteIdxSpan(first_non_whitespace_abs_bx, line_end_abs_bx).into();
+        let (first_non_ws_rbx, first_non_ws_abx) = {
+            let rbx = line_txt.find(|c: char| !c.is_whitespace())
+                .map(Into::into)
+                .unwrap(/* safe due to previous `return`s */);
+
+            let abx = rbx_to_abx(rbx);
+
+            (rbx, abx)
+        };
+
+        // we now have all of the information we need to set the indent
+        ret.indent = if first_non_ws_rbx.is_start_of_line() {
+            None
+        } else {
+            Some((line_start_abx, first_non_ws_abx).into())
+        };
+
+        // TODO: test escaped comment followed by actual comment
+        let opt_first_comment_start_bxs = line_txt.find('#')
+            .map(|ridx| {
+                let rbx = ridx.into();
+                let abx = rbx_to_abx(rbx);
+                (rbx, abx)
+            });
+
+        let opt_comment_span = opt_first_comment_start_bxs
+            .and_then(|(comment_start_rbx, comment_start_abx)| {
+                if comment_start_rbx == first_non_ws_rbx {
+                    // entire line from this point onward is a comment
+                    return Some((comment_start_abx, logical_line_end_abx).into())
                 }
 
-                let opt_text_before_comment_start = line.get(comment_start_rel_idx-1..comment_start_rel_idx);
-                let is_escaped_comment_start = opt_text_before_comment_start
+                // TODO: possibly not a valid boundary
+                let range_of_txt_preceeding_comment_start = (comment_start_rbx.0) - 1 .. (comment_start_rbx.0);
+                let opt_txt_preceeding_comment_start = line_txt.get(range_of_txt_preceeding_comment_start);
+                let is_escaped_comment_start = opt_txt_preceeding_comment_start
                     .map(|txt| txt.starts_with('\\'))
                     .unwrap_or(false);
 
@@ -251,82 +368,102 @@ impl<'lxr_src> MiniYamlLexer<'lxr_src> {
                     return None;
                 }
 
-                let start_abs_bx = (line_start_abs_bx.0 + comment_start_rel_idx).into();
-                ByteIdxSpan(start_abs_bx, line_end_abs_bx).into()
-        });
+                Some((comment_start_abx, logical_line_end_abx).into())
+            });
 
+        // we now have all of the information we need to set the comment,
+        // sans the escaped comment TODO
         ret.comment = opt_comment_span;
 
-        let opt_key_sep_start_rel_idx = line.find(KEY_SEP_CHAR);
-        let opt_key_sep_span = opt_key_sep_start_rel_idx.and_then(|rel_idx| {
-            let start_abs_bx = ByteIdx(line_start_abs_bx.0 + rel_idx);
-            let end_abs_bx = (start_abs_bx.0 + KEY_SEP_CHAR.len_utf8()).into();
-            ByteIdxSpan(start_abs_bx, end_abs_bx).into()
-        });
+        let opt_key_sep_span = {
+            // end at the comment, if one exists
+            let find_end_abs_idx = opt_comment_span
+                .map(|comment_span| comment_span.start)
+            // otherwise search til end-of-line
+                .unwrap_or(logical_line_end_abx)
+            // we're going to slice with this, so need the inner `usize`
+                .0;
 
+            let find_end_ridx = find_end_abs_idx - line_start_abx.0;
+            let line_txt_preceeding_comment = &line_txt[..find_end_ridx];
+            let opt_key_sep_start_rbx = line_txt_preceeding_comment.find(':')
+                .map(|ridx| RelByteIdx::from(ridx));
+
+            if let Some(key_sep_start_rbx) = opt_key_sep_start_rbx {
+                let start_abx = rbx_to_abx(key_sep_start_rbx);
+                let end_rbx = (key_sep_start_rbx.0 + ':'.len_utf8()).into();
+                let end_abx = rbx_to_abx(end_rbx);
+
+                AbsByteIdxSpan::from((
+                    start_abx,
+                    end_abx,
+                )).into()
+            } else {
+                None
+            }
+        };
+
+        // we now have all of the information we need to set the comment
         ret.key_sep = opt_key_sep_span;
 
-        let opt_key_span: Option<ByteIdxSpan> =
-            if ret.comment.map(|span| span.0) == Some(first_non_whitespace_abs_bx) {
+        let opt_key_span =
+            if ret.comment.map(|span| span.start) == Some(first_non_ws_abx) {
                 // line is either comment-only or indentation then comment
                 None
             } else {
                 match (opt_key_sep_span, opt_comment_span) {
                     (Some(key_sep_span), Some(comment_span)) => {
-                        let key_end_abs_idx = ((key_sep_span.0).0).min((comment_span.0).0);
+                        let key_end_abs_idx = ((key_sep_span.start).0).min((comment_span.start).0);
+                        let key_end_abx = AbsByteIdx::from(key_end_abs_idx);
 
-                        ByteIdxSpan(
-                            first_non_whitespace_abs_bx,
-                            key_end_abs_idx.into(),
-                        )
+                        AbsByteIdxSpan::from((
+                            first_non_ws_abx,
+                            key_end_abx,
+                        ))
                     },
-                    (Some(key_sep_span), None) => ByteIdxSpan(
-                        first_non_whitespace_abs_bx,
-                        key_sep_span.0,
-                    ),
-                    (None, Some(comment_span)) => ByteIdxSpan(
-                        first_non_whitespace_abs_bx,
-                        comment_span.0,
-                    ),
-                    (None, None) => ByteIdxSpan(
-                        first_non_whitespace_abs_bx,
-                        line_end_abs_bx,
-                    ),
+                    (Some(key_sep_span), None) => AbsByteIdxSpan::from((
+                        first_non_ws_abx,
+                        key_sep_span.start,
+                    )),
+                    (None, Some(comment_span)) => AbsByteIdxSpan::from((
+                        first_non_ws_abx,
+                        comment_span.start,
+                    )),
+                    (None, None) => AbsByteIdxSpan::from((
+                        first_non_ws_abx,
+                        logical_line_end_abx,
+                    )),
                 }.into()
             };
 
         ret.key = opt_key_span;
 
-        // the 'value' portion exists between key-sep and either the comment
-        // or end-of-line if there is no comment
-        let opt_value_span: Option<ByteIdxSpan> = opt_key_sep_span.and_then(|key_sep_span| {
-            let key_sep_end_rel_idx = (key_sep_span.1).0 - line_start_abs_bx.0;
-            let line_after_key_sep = &line[key_sep_end_rel_idx..];
+        let opt_value_span = opt_key_sep_span.and_then(|key_sep_span| {
+            let key_sep_end_ridx = key_sep_span.end.0 - line_start_abx.0;
+            let line_txt_after_key_sep = &line_txt[key_sep_end_ridx..];
 
-            let opt_value_start_rel_idx = line_after_key_sep.find(|ch: char| !ch.is_whitespace())
-                .map(|rel_rel_idx| rel_rel_idx + key_sep_end_rel_idx);
+            let opt_value_start_ridx = line_txt_after_key_sep.find(|c: char| !c.is_whitespace())
+                .map(|rel_rel_idx| rel_rel_idx + key_sep_end_ridx);
 
-            match (opt_value_start_rel_idx, opt_comment_span) {
-                (Some(value_start_rel_idx), Some(comment_span)) => {
-                    let line_start_abs_idx = line_start_abs_bx.0;
-                    let comment_start_abs_bx = comment_span.0;
-                    let comment_start_abs_idx = comment_start_abs_bx.0;
-                    let value_start_abs_idx = line_start_abs_idx + value_start_rel_idx;
-                    let comment_start_rel_idx = comment_start_abs_idx - line_start_abs_idx;
+            match (opt_value_start_ridx, opt_comment_span) {
+                (Some(value_start_ridx), Some(comment_span)) => {
+                    let comment_start_abx = comment_span.start;
+                    let comment_start_ridx = comment_start_abx.0;
+                    let value_start_abs_idx = line_start_abx.0 + value_start_ridx;
 
-                    if value_start_rel_idx < comment_start_rel_idx {
-                        ByteIdxSpan(
+                    if value_start_ridx < comment_start_ridx {
+                        AbsByteIdxSpan::from((
                             value_start_abs_idx.into(),
-                            comment_start_abs_bx,
-                        ).into()
+                            comment_start_abx,
+                        )).into()
                     } else {
                         None
                     }
                 },
-                (Some(value_start_rel_idx), None) => ByteIdxSpan(
-                    (line_start_abs_bx.0 + value_start_rel_idx).into(),
-                    line_end_abs_bx,
-                ).into(),
+                (Some(value_start_ridx), None) => AbsByteIdxSpan::from((
+                    AbsByteIdx(line_start_abx.0 + value_start_ridx),
+                    logical_line_end_abx
+                )).into(),
                 _ => None,
             }
         });
@@ -337,598 +474,495 @@ impl<'lxr_src> MiniYamlLexer<'lxr_src> {
     }
 }
 
+// ----- tests -----------------------------------------------------------------
+
 #[cfg(test)]
 mod tests {
-    use crate::*;
+    use super::*;
 
-    const NEWLINE_LF: &str = "\n";
+    macro_rules! assert_eq_span {
+        (
+            expected: $expected:expr,
+            actual: $actual:expr,
+            $debug_hint_fmt:expr,
+            $($debug_hint_arg:tt)+
+        ) => {
+            let expected_tup2 = Into::<(_, _)>::into($expected);
+            let actual_tup2 = Into::<(_, _)>::into($actual);
 
-    fn _conv_raw_spanned_line_to_subslice_incl_term(
-        src: &str,
-        IntermediateRawSpannedLine { raw: ByteIdxSpan(ByteIdx(start), ByteIdx(end)), .. }: IntermediateRawSpannedLine,
-    ) -> &str {
-        &src[start..end]
+            assert_eq!(
+                expected_tup2,
+                actual_tup2,
+                "{}", format_args!($debug_hint_fmt, $($debug_hint_arg)+),
+            );
+        };
+    }
+
+    macro_rules! assert_eq_opt_span {
+        (
+            expected: $expected:expr,
+            actual: $actual:expr,
+            $debug_hint_fmt:expr,
+            $($debug_hint_arg:tt)+
+        ) => {
+            let expected_opt_tup2 = $expected.map(|span| Into::<(_, _)>::into(span));
+            let actual_opt_tup2 = $actual.map(|span| Into::<(_, _)>::into(span));
+
+            assert_eq!(
+                expected_opt_tup2,
+                actual_opt_tup2,
+                "{}", format_args!($debug_hint_fmt, $($debug_hint_arg)+),
+            );
+        };
+    }
+
+    macro_rules! piecewise_assert_eq_lexed_lines {
+        (
+            expected: $expected:expr,
+            actual: $actual:expr,
+            line_num: $line_num:expr
+        ) => {
+            assert_eq_span!(
+                expected: $expected.raw,
+                actual: $actual.raw,
+                "line {} raw",
+                $line_num
+            );
+
+            assert_eq_opt_span!(
+                expected: $expected.indent,
+                actual: $actual.indent,
+                "line {} indent",
+                $line_num
+            );
+
+            assert_eq_opt_span!(
+                expected: $expected.key,
+                actual: $actual.key,
+                "line {} key",
+                $line_num
+            );
+
+            assert_eq_opt_span!(
+                expected: $expected.key_sep,
+                actual: $actual.key_sep,
+                "line {} key_sep",
+                $line_num
+            );
+
+            assert_eq_opt_span!(
+                expected: $expected.value,
+                actual: $actual.value,
+                "line {} value",
+                $line_num
+            );
+
+            assert_eq_opt_span!(
+                expected: $expected.comment,
+                actual: $actual.comment,
+                "line {} comment",
+                $line_num
+            );
+
+            assert_eq_opt_span!(
+                expected: $expected.term,
+                actual: $actual.term,
+                "line {} term",
+                $line_num
+            );
+        };
+    }
+
+    mod simple {
+        use super::*;
+
+        #[test]
+        fn empty_doc_returns_empty_collection() {
+        // arrange
+        let doc = "";
+
+        // act
+        let actual_lexed_lines = lex_miniyaml_document(doc);
+
+        // assert
+        assert!(actual_lexed_lines.is_empty());
+        }
+
+        #[test]
+        fn whitespace_only_lines() {
+           // arrange
+           let doc = [
+               /* line 1: start=0  end=1   */ "\n",
+               /* line 2: start=1  end=3   */ "\r\n",
+               /* line 3: start=3  end=5   */ " \n",
+               /* line 4: start=5  end=8   */ " \r\n",
+               /* line 5: start=8  end=10  */ " \r",
+               /* line 6: start=10 end=11  */ " ",
+           ].join("");
+
+            let expected_lines = vec![
+                LexedLine { // line 1
+                    raw: (0, 1).into(),
+                    indent: None,
+                    key: None,
+                    key_sep: None,
+                    value: None,
+                    comment: None,
+                    term: Some((0, 1).into()),
+                },
+                LexedLine { // line 2
+                    raw: (1, 3).into(),
+                    indent: None,
+                    key: None,
+                    key_sep: None,
+                    value: None,
+                    comment: None,
+                    term: Some((1, 3).into()),
+                },
+                LexedLine { // line 3
+                    raw: (3, 5).into(),
+                    indent: Some((3, 4).into()),
+                    key: None,
+                    key_sep: None,
+                    value: None,
+                    comment: None,
+                    term: Some((4, 5).into()),
+                },
+                LexedLine { // line 4
+                    raw: (5, 8).into(),
+                    indent: Some((5, 6).into()),
+                    key: None,
+                    key_sep: None,
+                    value: None,
+                    comment: None,
+                    term: Some((6, 8).into()),
+                },
+                LexedLine { // line 5
+                    raw: (8, 10).into(),
+                    indent: Some((8, 9).into()),
+                    key: None,
+                    key_sep: None,
+                    value: None,
+                    comment: None,
+                    term: Some((9, 10).into()),
+                },
+                LexedLine { // line 6
+                    raw: (10, 11).into(),
+                    indent: Some((10, 11).into()),
+                    key: None,
+                    key_sep: None,
+                    value: None,
+                    comment: None,
+                    term: None,
+                },
+            ];
+
+           // act
+           let actual_lines = lex_miniyaml_document(&doc);
+
+           // assert
+           assert_eq!(
+               expected_lines,
+               actual_lines,
+           );
+        }
+
+        #[test]
+        fn lf_followed_by_empty_line() {
+           // arrange
+           let doc = vec![
+               "\n",
+               "",
+           ].join("");
+
+           let expected_lines = vec![
+               LexedLine {
+                   raw: (0, 1).into(),
+                   indent: None,
+                   key: None,
+                   key_sep: None,
+                   value: None,
+                   comment: None,
+                   term: Some((0, 1).into()),
+               },
+           ];
+
+           // act
+           let actual_lines = lex_miniyaml_document(&doc);
+
+           // assert
+           assert_eq!(
+               expected_lines,
+               actual_lines,
+           );
+        }
+
+        #[test]
+        fn crlf_followed_by_empty_line() {
+           // arrange
+           let doc = vec![
+               "\r\n",
+               "",
+           ].join("");
+
+           let expected_lines = vec![
+               LexedLine {
+                   raw: (0, 2).into(),
+                   indent: None,
+                   key: None,
+                   key_sep: None,
+                   value: None,
+                   comment: None,
+                   term: Some((0, 2).into()),
+               },
+           ];
+
+           // act
+           let actual_lines = lex_miniyaml_document(&doc);
+
+           // assert
+           assert_eq!(
+               expected_lines,
+               actual_lines,
+           );
+        }
+
+        #[test]
+        fn cr_followed_by_empty_line() {
+           // arrange
+           let doc = vec![
+               "\r",
+               "",
+           ].join("");
+
+           let expected_lines = vec![
+               LexedLine {
+                   raw: (0, 1).into(),
+                   indent: None,
+                   key: None,
+                   key_sep: None,
+                   value: None,
+                   comment: None,
+                   term: Some((0, 1).into()),
+               },
+           ];
+
+           // act
+           let actual_lines = lex_miniyaml_document(&doc);
+
+           // assert
+           assert_eq!(
+               expected_lines,
+               actual_lines,
+           );
+        }
     }
 
     #[test]
-    fn raw_spanned_line_calc_line_end_does_not_include_term_if_term_exists() {
-        // arrange
-        let raw_spanned_line = IntermediateRawSpannedLine {
-            raw: ByteIdxSpan(0.into(), 5.into()),
-            term: Some(ByteIdxSpan(4.into(), 5.into())),
+    fn lexed_line_component_texts() {
+       // arrange
+       let doc = vec![
+           "    hello : world # foo \r",
+       ].join("");
+
+       let expected_texts = vec![
+            LexedLineTexts {
+                raw:     "    hello : world # foo \r",
+                indent:  "    "                       .into(),
+                key:         "hello "                 .into(),
+                key_sep:           ":"                .into(),
+                value:               "world "         .into(),
+                comment:                    "# foo "  .into(),
+                term:                             "\r".into(),
+            },
+       ];
+
+       #[derive(Debug, PartialEq)]
+       struct LexedLineTexts<'doc> {
+           raw: &'doc str,
+           indent: Option<&'doc str>,
+           key: Option<&'doc str>,
+           key_sep: Option<&'doc str>,
+           value: Option<&'doc str>,
+           comment: Option<&'doc str>,
+           term: Option<&'doc str>,
+       }
+
+        let map_opt_span_to_txt = |span: Option<AbsByteIdxSpan>| -> Option<&'_ str> {
+            match span {
+                None => None,
+                Some(span) => {
+                    let span_start_abs_idx = span.start.0;
+                    let span_end_abs_idx = span.end.0;
+                    (&doc[span_start_abs_idx..span_end_abs_idx]).into()
+                },
+            }
         };
 
-        let expected_line_end_bx = ByteIdx(4);
-
-        // act
-        let actual_line_end_bx = raw_spanned_line.line_end();
-
-        // assert
-        assert_eq!(
-            expected_line_end_bx,
-            actual_line_end_bx,
-        );
-    }
-
-    #[test]
-    fn raw_spanned_line_calc_line_end_at_end_of_raw_if_term_does_not_exist() {
-        // arrange
-        let raw_spanned_line = IntermediateRawSpannedLine {
-            raw: ByteIdxSpan(0.into(), 5.into()),
-            term: None,
+        let lexed_line_to_texts = |line: LexedLine| -> LexedLineTexts {
+            LexedLineTexts {
+                raw: {
+                    let start_idx = line.raw.start.0;
+                    let end_idx = line.raw.end.0;
+                    &doc[start_idx..end_idx]
+                },
+                indent: map_opt_span_to_txt(line.indent),
+                key: map_opt_span_to_txt(line.key),
+                key_sep: map_opt_span_to_txt(line.key_sep),
+                value: map_opt_span_to_txt(line.value),
+                comment: map_opt_span_to_txt(line.comment),
+                term: map_opt_span_to_txt(line.term),
+            }
         };
 
-        let expected_line_end_bx = ByteIdx(5);
+       // act
+       let actual_texts = lex_miniyaml_document(&doc).into_iter()
+           .map(lexed_line_to_texts)
+           .collect::<Vec<_>>();
 
-        // act
-        let actual_line_end_bx = raw_spanned_line.line_end();
-
-        // assert
-        assert_eq!(
-            expected_line_end_bx,
-            actual_line_end_bx,
-        );
+       // assert
+       assert_eq!(
+           expected_texts,
+           actual_texts,
+       );
     }
 
     #[test]
-    fn determines_raw_spanned_line_with_lf_term() {
+    fn lex_doc_96106f58_06bf_4e9d_a705_312acd853814() {
         // arrange
-        let input = "hello, world\n";
-        let expected_raw_spanned_lines = vec![ IntermediateRawSpannedLine {
-            raw: (0, 13).into(),
-            term: Some((12, 13).into()),
-        } ];
+        let doc = vec![
+            /* 1 */ "E2:\r",
+            /* 2 */ "    Inherits:^Soldier\r\n",
+            /* 3 */ "    Inherits@experience : ^GainsExperience\n",
+            /* 4 */ "	Valued:\r\n",
+            /* 5 */ "       # Cost: 300\r",
+            /* 6 */ "	    Cost: 200\n",
+            /* 7 */ " bar: \\# zoop\n",
+        ].join("");
 
-        // act
-        let actual_raw_spanned_lines = MiniYamlLexer::_split_into_lines_retaining_line_terms(input);
-
-        // assert
-        assert_eq!(
-            expected_raw_spanned_lines,
-            actual_raw_spanned_lines,
-        );
-    }
-
-    #[test]
-    fn determines_raw_spanned_line_with_crlf_term() {
-        // arrange
-        let input = "welcome\r\n";
-        let expected_raw_spanned_lines = vec![ IntermediateRawSpannedLine {
-            raw: (0, 9).into(),
-            term: Some((7, 9).into()),
-        } ];
-
-        // act
-        let actual_raw_spanned_lines = MiniYamlLexer::_split_into_lines_retaining_line_terms(input);
-
-        // assert
-        assert_eq!(
-            expected_raw_spanned_lines,
-            actual_raw_spanned_lines,
-        );
-    }
-
-    #[test]
-    fn determines_raw_spanned_line_without_term() {
-        // arrange
-        let input = "hoopla";
-        let expected_raw_spanned_lines = vec![ IntermediateRawSpannedLine {
-            raw: (0, 6).into(),
-            term: None,
-        } ];
-
-        // act
-        let actual_raw_spanned_lines = MiniYamlLexer::_split_into_lines_retaining_line_terms(input);
-
-        // assert
-        assert_eq!(
-            expected_raw_spanned_lines,
-            actual_raw_spanned_lines,
-        );
-    }
-
-    #[test]
-    fn determines_raw_spanned_lines_with_cr_and_lf_terms() {
-        // arrange
-        let input = "h\rello\n";
-        let expected_raw_spanned_lines = vec![
-            IntermediateRawSpannedLine {
-                raw: (0, 2).into(),
-                term: Some((1, 2).into()),
-            },
-            IntermediateRawSpannedLine {
-                raw: (2, 7).into(),
-                term: Some((6, 7).into()),
-            },
-        ];
-
-        // act
-        let actual_raw_spanned_lines = MiniYamlLexer::_split_into_lines_retaining_line_terms(input);
-
-        // assert
-        assert_eq!(
-            expected_raw_spanned_lines,
-            actual_raw_spanned_lines,
-        );
-    }
-
-    #[test]
-    fn _split_doc_into_lines_given_empty_str_returns_empty_collection() {
-        // arrange
-        let input_doc = "";
-
-        // act
-        let actual_raw_spanned_lines = MiniYamlLexer::_split_into_lines_retaining_line_terms(input_doc);
-
-        // assert
-        assert!(actual_raw_spanned_lines.is_empty());
-    }
-
-    #[test]
-    fn _split_doc_into_lines() {
-        // arrange
-        let raw_doc_lines = vec![
-            "\n",
-            "foo\n",
-            "\r\n",
-            "qux:\n",
-            "    baz\r",
-            "zoop\n",
-        ];
-
-        let doc = &raw_doc_lines.join("");
-
-        // act
-        let actual_raw_spanned_lines = MiniYamlLexer::_split_into_lines_retaining_line_terms(doc);
-        let actual_lines = actual_raw_spanned_lines.into_iter()
-            .map(|raw_spanned_line| _conv_raw_spanned_line_to_subslice_incl_term(doc, raw_spanned_line))
-            .collect::<Vec<_>>();
-
-        // assert
-        assert_eq!(
-            raw_doc_lines,
-            actual_lines
-        );
-    }
-
-    #[test]
-    fn lexer_given_doc_with_only_lf_returns_single_comp_line_with_term_set() {
-        // arrange
-        let input_miniyaml_doc = vec![
-            "",
-        ].join(NEWLINE_LF) + NEWLINE_LF;
-
-        let expected_comp_lines = vec![
-            ComponentizedLine {
+        let expected_lexed_lines = vec![
+            LexedLine { // line 1
+                raw: (0, 4).into(),
                 indent: None,
+                key: Some((0, 2).into()),
+                key_sep: Some((2, 3).into()),
+                value: None,
+                comment: None,
+                term: Some((3, 4).into()),
+            },
+            LexedLine { // line 2
+                raw: (4, 27).into(),
+                indent: Some((4, 8).into()),
+                key: Some((8, 16).into()),
+                key_sep: Some((16, 17).into()),
+                value: Some((17, 25).into()),
+                comment: None,
+                term: Some((25, 27).into()),
+            },
+            LexedLine { // line 3
+                raw: (27, 70).into(),
+                indent: Some((27, 31).into()),
+                key: Some((31, 51).into()),
+                key_sep: Some((51, 52).into()),
+                value: Some((53, 69).into()),
+                comment: None,
+                term: Some((69, 70).into()),
+            },
+            LexedLine { // line 4
+                raw: (70, 80).into(),
+                indent: Some((70, 71).into()),
+                key: Some((71, 77).into()),
+                key_sep: Some((77, 78).into()),
+                value: None,
+                comment: None,
+                term: Some((78, 80).into()),
+            },
+            LexedLine { // line 5
+                raw: (80, 99).into(),
+                indent: Some((80, 87).into()),
                 key: None,
                 key_sep: None,
                 value: None,
+                comment: Some((87, 98).into()),
+                term: Some((98, 99).into()),
+            },
+            LexedLine { // line 6
+                raw: (99, 114).into(),
+                indent: Some((99, 104).into()),
+                key: Some((104, 108).into()),
+                key_sep: Some((108, 109).into()),
+                value: Some((110, 113).into()),
                 comment: None,
-                term: Some(ByteIdxSpan(ByteIdx(0), ByteIdx(1))),
+                term: Some((113, 114).into()),
+            },
+            LexedLine { // line 7
+                raw: (114, 128).into(),
+                indent: Some((114, 115).into()),
+                key: Some((115, 118).into()),
+                key_sep: Some((118, 119).into()),
+                value: Some((120, 127).into()),
+                comment: None,
+                term: Some((127, 128).into()),
             },
         ];
 
         // act
-        let actual_comp_lines = MiniYamlLexer::new_from_str(&input_miniyaml_doc).lex();
+        let actual_lexed_lines = lex_miniyaml_document(&doc);
 
         // assert
         assert_eq!(
-            expected_comp_lines,
-            actual_comp_lines,
+            expected_lexed_lines.len(),
+            actual_lexed_lines.len(),
+            "count of `LexedLine`s",
         );
+
+        let iter_tup2 = expected_lexed_lines.into_iter()
+            .zip(actual_lexed_lines.into_iter());
+
+        for (line_idx, (expected_comp_spanned_line, actual_comp_spanned_line)) in iter_tup2.enumerate() {
+            piecewise_assert_eq_lexed_lines!(
+                expected: expected_comp_spanned_line,
+                actual: actual_comp_spanned_line,
+                line_num: line_idx + 1
+            );
+        }
     }
 
     #[test]
-    fn lexer_given_doc_with_indent_then_lf_returns_single_comp_line_with_indent_and_term_set() {
-        // arrange
-        let input_miniyaml_doc = vec![
-            " ",
-        ].join(NEWLINE_LF) + NEWLINE_LF;
+    #[allow(non_snake_case /* referencing types */)]
+    fn AbsByteIdx_impls_Index_for_str_correctly() {
+       // arrange
+       let doc = "     hello: world # welcome ";
+       let expected_texts = vec! [ "hello" ];
 
-        let expected_comp_lines = vec![
-            ComponentizedLine {
-                indent: Some(ByteIdxSpan(ByteIdx(0), ByteIdx(1))),
-                key: None,
-                key_sep: None,
-                value: None,
-                comment: None,
-                term: Some(ByteIdxSpan(ByteIdx(1), ByteIdx(2))),
-            },
-        ];
+       // act
+       let actual_texts = lex_miniyaml_document(doc).into_iter()
+        .map(|lexed_line| &doc[lexed_line.key.expect("key lexing broken")])
+        .collect::<Vec<_>>();
 
-        // act
-        let actual_comp_lines = MiniYamlLexer::new_from_str(&input_miniyaml_doc).lex();
-
-        // assert
-        assert_eq!(
-            expected_comp_lines,
-            actual_comp_lines,
-        );
+       // assert
+       assert_eq!(
+           expected_texts,
+           actual_texts,
+       );
     }
 
     #[test]
-    fn lexer_given_doc_with_indent_then_key_text_then_lf_returns_single_comp_line_with_indent_and_key_and_term_set() {
-        // arrange
-        let input_miniyaml_doc = vec![
-            " x",
-        ].join(NEWLINE_LF) + NEWLINE_LF;
+    #[allow(non_snake_case /* referencing types */)]
+    fn AbsByteIdx_impls_Index_for_String_correctly() {
+       // arrange
+       let doc = "     hello: world # welcome ".to_owned();
+       let expected_texts = vec! [ "hello" ];
 
-        let expected_comp_lines = vec![
-            ComponentizedLine {
-                indent: Some(ByteIdxSpan(ByteIdx(0), ByteIdx(1))),
-                key: Some(ByteIdxSpan(ByteIdx(1), ByteIdx(2))),
-                key_sep: None,
-                value: None,
-                comment: None,
-                term: Some(ByteIdxSpan(ByteIdx(2), ByteIdx(3))),
-            }
-        ];
+       // act
+       let actual_texts = lex_miniyaml_document(&doc).into_iter()
+        .map(|lexed_line| &doc[lexed_line.key.expect("key lexing broken")])
+        .collect::<Vec<_>>();
 
-        // act
-        let actual_comp_lines = MiniYamlLexer::new_from_str(&input_miniyaml_doc).lex();
-
-        // assert
-        assert_eq!(
-            expected_comp_lines,
-            actual_comp_lines,
-        );
-    }
-
-    #[test]
-    fn lexer_given_doc_with_key_text_then_lf_returns_single_comp_line_with_key_and_term_set() {
-        // arrange
-        let input_miniyaml_doc = vec![
-            "x",
-        ].join(NEWLINE_LF) + NEWLINE_LF;
-
-        let expected_comp_lines = vec![
-            ComponentizedLine {
-                indent: None,
-                key: Some(ByteIdxSpan(ByteIdx(0), ByteIdx(1))),
-                key_sep: None,
-                value: None,
-                comment: None,
-                term: Some(ByteIdxSpan(ByteIdx(1), ByteIdx(2))),
-            }
-        ];
-
-        // act
-        let actual_comp_lines = MiniYamlLexer::new_from_str(&input_miniyaml_doc).lex();
-
-        // assert
-        assert_eq!(
-            expected_comp_lines,
-            actual_comp_lines,
-        );
-    }
-
-    #[test]
-    fn lexer_given_doc_with_indent_then_comment_then_lf_returns_single_comp_line_with_indent_and_comment_and_term_set() {
-        // arrange
-        let input_miniyaml_doc = vec![
-            " # hello",
-        ].join(NEWLINE_LF) + NEWLINE_LF;
-
-        let expected_comp_lines = vec![
-            ComponentizedLine {
-                indent: Some(ByteIdxSpan(ByteIdx(0), ByteIdx(1))),
-                key: None,
-                key_sep: None,
-                value: None,
-                comment: Some(ByteIdxSpan(ByteIdx(1), ByteIdx(8))),
-                term: Some(ByteIdxSpan(ByteIdx(8), ByteIdx(9))),
-            }
-        ];
-
-        // act
-        let actual_comp_lines = MiniYamlLexer::new_from_str(&input_miniyaml_doc).lex();
-
-        // assert
-        assert_eq!(
-            expected_comp_lines,
-            actual_comp_lines,
-        );
-    }
-
-    #[test]
-    #[ignore = "test key_sep_after_comment_start has higher priority"]
-    fn escaped_comment_with_actual_comment_after() {
-        // arrange
-        let input_miniyaml_doc = vec![
-            "\\# escaped # actual",
-        ].join(NEWLINE_LF) + NEWLINE_LF;
-
-        let expected_comp_lines = vec![
-            ComponentizedLine {
-                indent: None,
-                key: Some(ByteIdxSpan(ByteIdx(0), ByteIdx(11))),
-                key_sep: None,
-                value: None,
-                comment: Some(ByteIdxSpan(ByteIdx(11), ByteIdx(19))),
-                term: Some(ByteIdxSpan(ByteIdx(19), ByteIdx(20))),
-            }
-        ];
-
-        // act
-        let actual_comp_lines = MiniYamlLexer::new_from_str(&input_miniyaml_doc).lex();
-
-        // assert
-        assert_eq!(
-            expected_comp_lines,
-            actual_comp_lines,
-        );
-    }
-
-    #[test]
-    #[ignore = "until this is encountered in the wild, or I feel like fixing it"]
-    fn key_sep_after_comment_start() {
-        // arrange
-        let input_miniyaml_doc = vec![
-            " # hello : world",
-        ].join(NEWLINE_LF) + NEWLINE_LF;
-
-        let expected_comp_lines = vec![
-            ComponentizedLine {
-                indent: Some(ByteIdxSpan(ByteIdx(0), ByteIdx(1))),
-                key: None,
-                key_sep: None,
-                value: None,
-                comment: Some(ByteIdxSpan(ByteIdx(1), ByteIdx(16))),
-                term: Some(ByteIdxSpan(ByteIdx(16), ByteIdx(17))),
-            }
-        ];
-
-        // act
-        let actual_comp_lines = MiniYamlLexer::new_from_str(&input_miniyaml_doc).lex();
-
-        // assert
-        assert_eq!(
-            expected_comp_lines,
-            actual_comp_lines,
-        );
-    }
-
-    #[test]
-    fn lexer_given_doc_with_key_then_key_sep_then_escaped_comment_returns_single_comp_line_with_key_and_key_sep_and_value_set() {
-        // arrange
-        let input_miniyaml_doc = vec![
-            "hi:\\# foo",
-        ].join(NEWLINE_LF) + NEWLINE_LF;
-
-        let expected_comp_lines = vec![
-            ComponentizedLine {
-                indent: None,
-                key: Some(ByteIdxSpan(ByteIdx(0), ByteIdx(2))),
-                key_sep: Some(ByteIdxSpan(ByteIdx(2), ByteIdx(3))),
-                value: Some(ByteIdxSpan(ByteIdx(3), ByteIdx(9))),
-                comment: None,
-                term: Some(ByteIdxSpan(ByteIdx(9), ByteIdx(10))),
-            }
-        ];
-
-        // act
-        let actual_comp_lines = MiniYamlLexer::new_from_str(&input_miniyaml_doc).lex();
-
-        // assert
-        assert_eq!(
-            expected_comp_lines,
-            actual_comp_lines,
-        );
-    }
-
-    #[test]
-    fn lexer_given_doc_with_indent_then_key_then_comment_then_lf_returns_single_comp_line_with_indent_and_key_and_comment_and_term_set() {
-        // arrange
-        let input_miniyaml_doc = vec![
-            " hi # hello",
-        ].join(NEWLINE_LF) + NEWLINE_LF;
-
-        let expected_comp_lines = vec![
-            ComponentizedLine {
-                indent: Some(ByteIdxSpan(ByteIdx(0), ByteIdx(1))),
-                key: Some(ByteIdxSpan(ByteIdx(1), ByteIdx(4))),
-                key_sep: None,
-                value: None,
-                comment: Some(ByteIdxSpan(ByteIdx(4), ByteIdx(11))),
-                term: Some(ByteIdxSpan(ByteIdx(11), ByteIdx(12))),
-            }
-        ];
-
-        // act
-        let actual_comp_lines = MiniYamlLexer::new_from_str(&input_miniyaml_doc).lex();
-
-        // assert
-        assert_eq!(
-            expected_comp_lines,
-            actual_comp_lines,
-        );
-    }
-
-    #[test]
-    fn lexer_given_doc_with_key_then_key_sep_then_lf_returns_single_comp_line_with_key_and_key_sep_and_term_set() {
-        // arrange
-        let input_miniyaml_doc = vec![
-            "Packages:",
-        ].join(NEWLINE_LF) + NEWLINE_LF;
-
-        let expected_comp_lines = vec![
-            ComponentizedLine {
-                indent: None,
-                key: Some(ByteIdxSpan(ByteIdx(0), ByteIdx(8))),
-                key_sep: Some(ByteIdxSpan(ByteIdx(8), ByteIdx(9))),
-                value: None,
-                comment: None,
-                term: Some(ByteIdxSpan(ByteIdx(9), ByteIdx(10))),
-            }
-        ];
-
-        // act
-        let actual_comp_lines = MiniYamlLexer::new_from_str(&input_miniyaml_doc).lex();
-
-        // assert
-        assert_eq!(
-            expected_comp_lines,
-            actual_comp_lines,
-        );
-    }
-
-    #[test]
-    fn lexer_given_doc_with_key_then_key_sep_then_value_then_lf_returns_single_comp_line_with_key_and_key_sep_and_value_and_term_set() {
-        // arrange
-        let input_miniyaml_doc = vec![
-            "x:y",
-        ].join(NEWLINE_LF) + NEWLINE_LF;
-
-        let expected_comp_lines = vec![
-            ComponentizedLine {
-                indent: None,
-                key: Some(ByteIdxSpan(ByteIdx(0), ByteIdx(1))),
-                key_sep: Some(ByteIdxSpan(ByteIdx(1), ByteIdx(2))),
-                value: Some(ByteIdxSpan(ByteIdx(2), ByteIdx(3))),
-                comment: None,
-                term: Some(ByteIdxSpan(ByteIdx(3), ByteIdx(4))),
-            }
-        ];
-
-        // act
-        let actual_comp_lines = MiniYamlLexer::new_from_str(&input_miniyaml_doc).lex();
-
-        // assert
-        assert_eq!(
-            expected_comp_lines,
-            actual_comp_lines,
-        );
-    }
-
-    #[test]
-    fn lexer_given_indent_then_key_then_key_sep_then_value_then_comment_then_lf_returns_single_comp_line_with_indent_and_key_and_key_sep_and_value_and_comment_and_term_set() {
-        // arrange
-        let input_miniyaml_doc = vec![
-            " x:y#z",
-        ].join(NEWLINE_LF) + NEWLINE_LF;
-
-        let expected_comp_lines = vec![
-            ComponentizedLine {
-                indent: Some(ByteIdxSpan(ByteIdx(0), ByteIdx(1))),
-                key: Some(ByteIdxSpan(ByteIdx(1), ByteIdx(2))),
-                key_sep: Some(ByteIdxSpan(ByteIdx(2), ByteIdx(3))),
-                value: Some(ByteIdxSpan(ByteIdx(3), ByteIdx(4))),
-                comment: Some(ByteIdxSpan(ByteIdx(4), ByteIdx(6))),
-                term: Some(ByteIdxSpan(ByteIdx(6), ByteIdx(7))),
-            }
-        ];
-
-        // act
-        let actual_comp_lines = MiniYamlLexer::new_from_str(&input_miniyaml_doc).lex();
-
-        // assert
-        assert_eq!(
-            expected_comp_lines,
-            actual_comp_lines,
-        );
-    }
-
-    #[test]
-    // #[ignore = "todo prior: tests for individual pieces"]
-    fn _multiple_comp_lines() {
-        // arrange
-        let input_miniyaml_doc = vec![
-            /* 1 */ "Packages:",
-            /* 2 */ "    ~^Content/ts",
-            /* 3 */ "    .",
-            /* 4 */ "    $ts: ts",
-            /* 5 */ "    ./mods/common: common",
-            /* 6 */ "",
-            /* 7 */ "non_ascii: 请务必取代",
-        ].join(NEWLINE_LF) + NEWLINE_LF;
-
-        let expected_comp_lines: Vec<ComponentizedLine> = vec![
-            ComponentizedLine {
-                indent: None,
-                key: Some(ByteIdxSpan(ByteIdx(0), ByteIdx(8))),
-                key_sep: Some(ByteIdxSpan(ByteIdx(8), ByteIdx(9))),
-                value: None,
-                comment: None,
-                term: Some(ByteIdxSpan(ByteIdx(9), ByteIdx(10)))
-            },
-            ComponentizedLine {
-                indent: Some(ByteIdxSpan(ByteIdx(10), ByteIdx(14))),
-                key: Some(ByteIdxSpan(ByteIdx(14), ByteIdx(26))),
-                key_sep: None,
-                value: None,
-                comment: None,
-                term: Some(ByteIdxSpan(ByteIdx(26), ByteIdx(27))),
-            },
-            ComponentizedLine {
-                indent: Some(ByteIdxSpan(ByteIdx(27), ByteIdx(31))),
-                key: Some(ByteIdxSpan(ByteIdx(31), ByteIdx(32))),
-                key_sep: None,
-                value: None,
-                comment: None,
-                term: Some(ByteIdxSpan(ByteIdx(32), ByteIdx(33))),
-            },
-            ComponentizedLine {
-                indent: Some(ByteIdxSpan(ByteIdx(33), ByteIdx(37))),
-                key: Some(ByteIdxSpan(ByteIdx(37), ByteIdx(40))),
-                key_sep: Some(ByteIdxSpan(ByteIdx(40), ByteIdx(41))),
-                value: Some(ByteIdxSpan(ByteIdx(42), ByteIdx(44))),
-                comment: None,
-                term: Some(ByteIdxSpan(ByteIdx(44), ByteIdx(45))),
-            },
-            ComponentizedLine {
-                indent: Some(ByteIdxSpan(ByteIdx(45), ByteIdx(49))),
-                key: Some(ByteIdxSpan(ByteIdx(49), ByteIdx(62))),
-                key_sep: Some(ByteIdxSpan(ByteIdx(62), ByteIdx(63))),
-                value: Some(ByteIdxSpan(ByteIdx(64), ByteIdx(70))),
-                comment: None,
-                term: Some(ByteIdxSpan(ByteIdx(70), ByteIdx(71))),
-            },
-            ComponentizedLine {
-                indent: None,
-                key: None,
-                key_sep: None,
-                value: None,
-                comment: None,
-                term: Some(ByteIdxSpan(ByteIdx(71), ByteIdx(72))),
-            },
-            ComponentizedLine {
-                indent: None,
-                key: Some(ByteIdxSpan(ByteIdx(72), ByteIdx(81))),
-                key_sep: Some(ByteIdxSpan(ByteIdx(81), ByteIdx(82))),
-                value: Some(ByteIdxSpan(ByteIdx(83), ByteIdx(98))),
-                comment: None,
-                term: Some(ByteIdxSpan(ByteIdx(98), ByteIdx(99))),
-            },
-        ];
-
-        // act
-        let actual_comp_lines = MiniYamlLexer::new_from_str(&input_miniyaml_doc).lex();
-
-        // assert
-        assert_eq!(
-            expected_comp_lines,
-            actual_comp_lines,
-        );
+       // assert
+       assert_eq!(
+           expected_texts,
+           actual_texts,
+       );
     }
 }
