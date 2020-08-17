@@ -3,4 +3,6 @@ E2:
     Inherits@experience: ^GainsExperience
 	Valued:
 		# Cost: 200
-		Cost: 200
+  	Cost: 200
+	  non_ascii: 请务必取代#idk
+	  请务必取代: non_ascii_key #idk
