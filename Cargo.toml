@@ -5,5 +5,5 @@ authors = ["Taryn Hill <taryn+openra_oraide@phrohdoh.com>"]
 edition = "2018"
 
 [[bin]]
-name = "oraide"
+name = "ora"
 path = "src/main.rs"
