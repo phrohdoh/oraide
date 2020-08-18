@@ -1,0 +1,9 @@
+exploding-barrel:
+    Tooltip:
+        Name: barrels
+    Health:
+        HP: 5
+    Explodes:
+        Weapon: large-barrel-explode
+    MapEditorData:
+        Categories: props, dangerous-props

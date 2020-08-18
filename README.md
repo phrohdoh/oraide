@@ -2,20 +2,36 @@
 
 ## project plan
 
-A suite of tools to aide in the development of [OpenRA]-based games.
+A suite of *tools* to aide in the development of [OpenRA]-based games.
+
+> OpenRA is a general-purpose [RTS] [game engine] with *strong modding support*.
+
+The goal of this project is not to produce [libraries] for developers, although
+that will happen, but to create tools (such as command-line applications,
+editor extensions, etc.) that reduce friction in game development.
 
 ## actual project status
 
-Allows you to [lex] [MiniYaml] into componentized, spanned lines for the
-purpose of [linting], or whatever else you can think of.
+Exposes functionality to [lex] [MiniYaml], a textual file format custom to
+OpenRA, into componentized, spanned lines which can be used to implement basic
+[linting], but not much else currently.
 
-Since lexing is implemented, the next piece of this library to implement is
-building a tree out of the lexed lines.
+See the "[running the code](##-running-the-code)" section of this
+file for more information.
+
+---
+
+Note that although half of the name "MiniYaml" is "Yaml", and the `.yaml` file
+extension is used, it **is not [YAML]**.
+
+Due to the fact that MiniYaml and YAML are indentation-based,
+syntax-highlighting a MiniYaml file as YAML generally works well enough.
 
 ## technologies used
 
 - the [Rust] programming language (see the [rust-toolchain] file for
   version info)
+  - [Cargo] for project management / building / etc
 - Microsoft's [Visual Studio Code] (some snippets in-tree)
 
 ## compiling the code
@@ -30,83 +46,95 @@ cargo build
 ## running the code
 
 For the time being, this project is primarily a library (not an executable)
-so there is not much to run, but there is a binary target (`src/main.rs`) that
-is used to manually test the library's functionality.
+so there is not much to run, but there is a binary target (code in
+`src/main.rs`) that is used to manually test the library's functionality.
 
 From the root of this repository (the directory containing the file you're
-currently reading), execute the following in your shell:
+currently reading), execute the following in your shell.
 
 ```
-cargo run test-miniyaml-files/simple.yaml
+cargo run test-miniyaml-files/exploding-barrel.yaml
 ```
 
 You should see output similar to the following:
 
 <details><summary>command output</summary>
 
+Notice that the lines have been split into components (`indent`, `key`, etc.).
+Internally these components are byte index spans, but the text of those spans
+is displayed here.
+
 ```
-raw     = "E2:\n"
+raw     = "exploding-barrel:\n"
 indent  = None
-key     = Some("E2")
+key     = Some("exploding-barrel")
 key_sep = Some(":")
 value   = None
 comment = None
 term    = Some("\n")
 
-raw     = "    Inherits: ^Soldier\n"
+raw     = "    Tooltip:\n"
 indent  = Some("    ")
-key     = Some("Inherits")
+key     = Some("Tooltip")
 key_sep = Some(":")
-value   = Some("^Soldier")
+value   = None
 comment = None
 term    = Some("\n")
 
-raw     = "    Inherits@experience: ^GainsExperience\n"
+raw     = "        Name: barrels\n"
+indent  = Some("        ")
+key     = Some("Name")
+key_sep = Some(":")
+value   = Some("barrels")
+comment = None
+term    = Some("\n")
+
+raw     = "    Health:\n"
 indent  = Some("    ")
-key     = Some("Inherits@experience")
-key_sep = Some(":")
-value   = Some("^GainsExperience")
-comment = None
-term    = Some("\n")
-
-raw     = "\tValued:\n"
-indent  = Some("\t")
-key     = Some("Valued")
+key     = Some("Health")
 key_sep = Some(":")
 value   = None
 comment = None
 term    = Some("\n")
 
-raw     = "\t\t# Cost: 200\n"
-indent  = Some("\t\t")
-key     = None
-key_sep = None
-value   = None
-comment = Some("# Cost: 200")
-term    = Some("\n")
-
-raw     = "  \tCost: 200\n"
-indent  = Some("  \t")
-key     = Some("Cost")
+raw     = "        HP: 5\n"
+indent  = Some("        ")
+key     = Some("HP")
 key_sep = Some(":")
-value   = Some("200")
+value   = Some("5")
 comment = None
 term    = Some("\n")
 
-raw     = "\t  non_ascii: 请务必取代#idk\n"
-indent  = Some("\t  ")
-key     = Some("non_ascii")
+raw     = "    Explodes:\n"
+indent  = Some("    ")
+key     = Some("Explodes")
 key_sep = Some(":")
-value   = Some("请务必取代")
-comment = Some("#idk")
+value   = None
+comment = None
 term    = Some("\n")
 
-raw     = "\t  请务必取代: non_ascii_key #idk\n"
-indent  = Some("\t  ")
-key     = Some("请务必取代")
+raw     = "        Weapon: large-barrel-explode\n"
+indent  = Some("        ")
+key     = Some("Weapon")
 key_sep = Some(":")
-value   = Some("non_ascii_key ")
-comment = Some("#idk")
+value   = Some("large-barrel-explode")
+comment = None
+term    = Some("\n")
+
+raw     = "    MapEditorData:\n"
+indent  = Some("    ")
+key     = Some("MapEditorData")
+key_sep = Some(":")
+value   = None
+comment = None
+term    = Some("\n")
+
+raw     = "        Categories: props, dangerous-props\n"
+indent  = Some("        ")
+key     = Some("Categories")
+key_sep = Some(":")
+value   = Some("props, dangerous-props")
+comment = None
 term    = Some("\n")
 ```
 
@@ -123,10 +151,17 @@ Read [LICENSE-AGPLv3] for details.
 
 [LICENSE-AGPLv3]: ./LICENSE-AGPLv3
 [AGPLv3]: https://www.gnu.org/licenses/agpl-3.0
+[libraries]: https://en.wikipedia.org/wiki/Library_(computing)
 [OpenRA]: https://openra.net
+[RTS]: https://en.wikipedia.org/wiki/Real-time_strategy
+[game engine]: https://en.wikipedia.org/wiki/Game_engine
 [lex]: https://en.wikipedia.org/wiki/Lexical_analysis
 [MiniYaml]: https://www.openra.net/book/glossary.html#miniyaml
 [linting]: https://en.wikipedia.org/wiki/Lint_%28software%29
+[prop]: https://en.wikipedia.org/wiki/Theatrical_property
+[actor]: https://www.openra.net/book/glossary.html#actor
+[YAML]: https://en.wikipedia.org/wiki/YAML
 [Rust]: https://www.rust-lang.org/
 [rust-toolchain]: ./rust-toolchain
+[Cargo]: https://doc.rust-lang.org/cargo/
 [Visual Studio Code]: https://code.visualstudio.com/
