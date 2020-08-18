@@ -1,5 +1,9 @@
 # `oraide`
 
+## what's in a name? what the heck is an *oraide*?
+
+The *oraide* moniker is simply a shortened form of "OpenRA [IDE]."
+
 ## project plan
 
 A suite of *tools* to aide in the development of [OpenRA]-based games.
@@ -164,19 +168,20 @@ term    = Some("\n")
 
 Read [LICENSE-AGPLv3] for details.
 
-[LICENSE-AGPLv3]: ./LICENSE-AGPLv3
-[AGPLv3]: https://www.gnu.org/licenses/agpl-3.0
-[libraries]: https://en.wikipedia.org/wiki/Library_(computing)
-[OpenRA]: https://openra.net
-[RTS]: https://en.wikipedia.org/wiki/Real-time_strategy
-[game engine]: https://en.wikipedia.org/wiki/Game_engine
-[lex]: https://en.wikipedia.org/wiki/Lexical_analysis
-[MiniYaml]: https://www.openra.net/book/glossary.html#miniyaml
-[linting]: https://en.wikipedia.org/wiki/Lint_%28software%29
-[prop]: https://en.wikipedia.org/wiki/Theatrical_property
 [actor]: https://www.openra.net/book/glossary.html#actor
-[YAML]: https://en.wikipedia.org/wiki/YAML
-[Rust]: https://www.rust-lang.org/
-[rust-toolchain]: ./rust-toolchain
+[AGPLv3]: https://www.gnu.org/licenses/agpl-3.0
 [Cargo]: https://doc.rust-lang.org/cargo/
+[game engine]: https://en.wikipedia.org/wiki/Game_engine
+[IDE]: https://en.wikipedia.org/wiki/Integrated_development_environment
+[lex]: https://en.wikipedia.org/wiki/Lexical_analysis
+[libraries]: https://en.wikipedia.org/wiki/Library_(computing)
+[LICENSE-AGPLv3]: ./LICENSE-AGPLv3
+[linting]: https://en.wikipedia.org/wiki/Lint_%28software%29
+[MiniYaml]: https://www.openra.net/book/glossary.html#miniyaml
+[OpenRA]: https://openra.net
+[prop]: https://en.wikipedia.org/wiki/Theatrical_property
+[RTS]: https://en.wikipedia.org/wiki/Real-time_strategy
+[rust-toolchain]: ./rust-toolchain
+[Rust]: https://www.rust-lang.org/
 [Visual Studio Code]: https://code.visualstudio.com/
+[YAML]: https://en.wikipedia.org/wiki/YAML
