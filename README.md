@@ -33,6 +33,7 @@ syntax-highlighting a MiniYaml file as YAML generally works well enough.
   version info)
   - [Cargo] for project management / building / etc
 - Microsoft's [Visual Studio Code] (some snippets in-tree)
+  - use whatever works best for you
 
 ## compiling the code
 
