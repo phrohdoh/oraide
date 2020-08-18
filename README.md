@@ -38,11 +38,25 @@ syntax-highlighting a MiniYaml file as YAML generally works well enough.
 ## compiling the code
 
 From the root of this repository (the directory containing the file you're
-currently reading), execute the following in your shell:
+currently reading), execute the following in your shell.
 
 ```
 cargo build
 ```
+
+You should see output similar to the following.
+
+<details><summary>command output</summary>
+
+```
+Compiling oraide v0.0.0 (/your/local/path/to/oraide)
+    Finished dev [unoptimized + debuginfo] target(s) in 0.81s
+```
+</details>
+
+Note that by default `cargo` uses its built-in *dev* profile, not *release*.
+This may have performance implications.
+You can read more [here](https://doc.rust-lang.org/cargo/reference/profiles.html#dev).
 
 ## running the code
 
@@ -57,7 +71,7 @@ currently reading), execute the following in your shell.
 cargo run test-miniyaml-files/exploding-barrel.yaml
 ```
 
-You should see output similar to the following:
+You should see output similar to the following.
 
 <details><summary>command output</summary>
 
