@@ -50,7 +50,7 @@ From the root of this repository (the directory containing the file you're
 currently reading), execute the following in your shell.
 
 ```
-cargo run --manifest-path=./crates/cli/Cargo.toml -- lex ./test-miniyaml-files/exploding-barrel.yaml
+cargo run --manifest-path=./crates/cli/Cargo.toml -- check ./test-miniyaml-files/exploding-barrel.yaml
 ```
 
 You should see output similar to the following.

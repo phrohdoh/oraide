@@ -18,7 +18,7 @@ pub(crate) struct Args {
 
 pub(crate) enum Command {
     Help,
-    LexFile(PathBuf),
+    CheckSingleFile(PathBuf),
 }
 
 impl Args {
@@ -41,13 +41,13 @@ impl Args {
         };
 
         let command = match cmd.as_str() {
-            "lex" => {
+            "check" => {
                 if is_user_requesting_help {
                     eprintln!("\
-ora lex
+ora check
 
 USAGE:
-    ora lex <file-path-to-lex> [FLAGS]
+    ora check <file-path-to-check> [FLAGS]
 
 FLAGS:
     -h, --help        prints help information"
@@ -65,7 +65,7 @@ FLAGS:
                     trailing.pop().unwrap().into()
                 };
 
-                Command::LexFile(file_path)
+                Command::CheckSingleFile(file_path)
             },
             other => bail!("command {:?} not supported", other),
         };
@@ -85,6 +85,6 @@ FLAGS:
     -h, --help        prints help information
 
 COMMANDS:
-    lex"
+    check"
     );
 }

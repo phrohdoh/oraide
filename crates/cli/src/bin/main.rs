@@ -31,11 +31,11 @@ fn try_main() -> Result<()> {
 
     match args.command {
         args::Command::Help => /* handled in args.rs */ Ok(()),
-        args::Command::LexFile(path) => _lex_file(&path),
+        args::Command::CheckSingleFile(path) => _check_single_file(&path),
     }
 }
 
-fn _lex_file(
+fn _check_single_file(
     path: &Path,
 ) -> Result<()> {
     let file_contents = fs::read_to_string(path)?;
