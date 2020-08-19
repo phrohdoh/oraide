@@ -20,8 +20,8 @@ Exposes functionality to [lex] [MiniYaml], a textual file format custom to
 OpenRA, into componentized, spanned lines which can be used to implement basic
 [linting], but not much else currently.
 
-See the "[running the code](##-running-the-code)" section of this
-file for more information.
+See the [running the command-line application] section of this file for
+more information.
 
 ---
 
@@ -163,4 +163,5 @@ Read [LICENSE-AGPLv3] for details.
 [Rust]: https://www.rust-lang.org/
 [Visual Studio Code]: https://code.visualstudio.com/
 [Visual Studio Code Remote - Containers]: https://code.visualstudio.com/docs/remote/containers
+[running the command-line application]: #running-the-command-line-application
 [YAML]: https://en.wikipedia.org/wiki/YAML
