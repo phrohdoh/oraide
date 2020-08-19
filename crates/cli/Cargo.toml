@@ -1,0 +1,22 @@
+# command-line interface to the `oraide` project: `ora`
+#
+# implemented as a combination of the lib `oraide-cli` and the bin `ora`
+
+[package]
+name = "oraide-cli"
+version = "0.0.0"
+authors = ["Taryn Hill <taryn+oraide@phrohdoh.com>"]
+edition = "2018"
+
+# bins are in a non-standard location, so we'll configure them
+# manually instead of having Cargo do it for us
+autobins = false
+
+[[bin]]
+name = "ora"
+path = "src/bin/main.rs"
+
+[dependencies]
+oraide-miniyaml = { path = "../miniyaml" }
+pico-args = "0.3"
+anyhow = "1.0"

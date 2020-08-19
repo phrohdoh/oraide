@@ -1,9 +1,0 @@
-[package]
-name = "oraide"
-version = "0.0.0"
-authors = ["Taryn Hill <taryn+openra_oraide@phrohdoh.com>"]
-edition = "2018"
-
-[[bin]]
-name = "ora"
-path = "src/main.rs"

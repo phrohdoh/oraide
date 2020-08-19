@@ -1,0 +1,7 @@
+# https://www.openra.net/book/glossary.html#miniyaml
+
+[package]
+name = "oraide-miniyaml"
+version = "0.0.0"
+authors = ["Taryn Hill <taryn+oraide@phrohdoh.com>"]
+edition = "2018"

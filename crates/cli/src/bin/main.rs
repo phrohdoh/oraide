@@ -4,49 +4,49 @@
 // copyright (c)
 // - 2020 Taryn "Phrohdoh" Hill
 
+mod args;
+
 use {
     std::{
-        env,
-        io::Read,
-        fs::File,
+        fs,
+        process,
+        path::Path,
     },
-    oraide::*,
+    oraide_cli::Result,
+    oraide_miniyaml::{
+        lex_miniyaml_document,
+        AbsByteIdxSpan
+    },
 };
 
 fn main() {
-    let mut args = env::args().skip(1);
-    let miniyaml_file_path = match args.next() {
-        Some(path) => path,
-        _ => {
-            eprintln!("error: please provide a file path for a MiniYaml file");
-            std::process::exit(1);
-        },
-    };
-
-    let mut miniyaml_file_handle = match File::open(&miniyaml_file_path) {
-        Ok(hndl) => hndl,
-        Err(e) => {
-            eprintln!("error: unable to open '{}'", miniyaml_file_path);
-            eprintln!("       because: {}", e.to_string());
-            std::process::exit(2);
-        },
-    };
-
-    let mut miniyaml_text = String::new();
-    if let Err(e) = miniyaml_file_handle.read_to_string(&mut miniyaml_text) {
-        eprintln!("error: unable to read '{}'", miniyaml_file_path);
-        eprintln!("       because: {}", e.to_string());
-        std::process::exit(3);
+    if let Err(err) = try_main() {
+        eprintln!("{}", err);
+        process::exit(101);
     }
+}
 
-    let lines = lex_miniyaml_document(&miniyaml_text);
+fn try_main() -> Result<()> {
+    let args = args::Args::parse()?;
+
+    match args.command {
+        args::Command::Help => /* handled in args.rs */ Ok(()),
+        args::Command::LexFile(path) => _lex_file(&path),
+    }
+}
+
+fn _lex_file(
+    path: &Path,
+) -> Result<()> {
+    let file_contents = fs::read_to_string(path)?;
+    let lines = lex_miniyaml_document(&file_contents);
 
     let map_opt_span_to_txt = |opt_span: Option<AbsByteIdxSpan>| -> Option<&str> {
-        opt_span.map(|span| &miniyaml_text[span])
+        opt_span.map(|span| &file_contents[span])
     };
 
     for line in lines {
-        let raw_txt = &miniyaml_text[line.raw];
+        let raw_txt = &file_contents[line.raw];
         let opt_indent_txt = map_opt_span_to_txt(line.indent);
         let opt_key_txt = map_opt_span_to_txt(line.key);
         let opt_key_sep_txt = map_opt_span_to_txt(line.key_sep);
@@ -63,4 +63,6 @@ fn main() {
         println!("term    = {:?}", opt_term_txt);
         println!();
     }
+
+    Ok(())
 }

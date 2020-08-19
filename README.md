@@ -39,40 +39,16 @@ syntax-highlighting a MiniYaml file as YAML generally works well enough.
 - Microsoft's [Visual Studio Code] (some snippets in-tree)
   - use whatever works best for you
 
-## compiling the code
+## running the command-line application
+
+Note that this command-line application primarily exists currently to manually
+test functionality as it is implemented.
 
 From the root of this repository (the directory containing the file you're
 currently reading), execute the following in your shell.
 
 ```
-cargo build
-```
-
-You should see output similar to the following.
-
-<details><summary>command output</summary>
-
-```
-Compiling oraide v0.0.0 (/your/local/path/to/oraide)
-    Finished dev [unoptimized + debuginfo] target(s) in 0.81s
-```
-</details>
-
-Note that by default `cargo` uses its built-in *dev* profile, not *release*.
-This may have performance implications.
-You can read more [here](https://doc.rust-lang.org/cargo/reference/profiles.html#dev).
-
-## running the code
-
-For the time being, this project is primarily a library (not an executable)
-so there is not much to run, but there is a binary target (code in
-`src/main.rs`) that is used to manually test the library's functionality.
-
-From the root of this repository (the directory containing the file you're
-currently reading), execute the following in your shell.
-
-```
-cargo run test-miniyaml-files/exploding-barrel.yaml
+cargo run --manifest-path=./crates/cli/Cargo.toml -- lex ./test-miniyaml-files/exploding-barrel.yaml
 ```
 
 You should see output similar to the following.
