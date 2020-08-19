@@ -38,6 +38,8 @@ syntax-highlighting a MiniYaml file as YAML generally works well enough.
   - [Cargo] for project management / building / etc
 - Microsoft's [Visual Studio Code] (some snippets in-tree)
   - use whatever works best for you
+  - [Visual Studio Code Remote - Containers] so the project can be worked on
+    remotely and without polluting the maintainer's local machine / environment
 
 ## running the command-line application
 
@@ -160,4 +162,5 @@ Read [LICENSE-AGPLv3] for details.
 [rust-toolchain]: ./rust-toolchain
 [Rust]: https://www.rust-lang.org/
 [Visual Studio Code]: https://code.visualstudio.com/
+[Visual Studio Code Remote - Containers]: https://code.visualstudio.com/docs/remote/containers
 [YAML]: https://en.wikipedia.org/wiki/YAML
