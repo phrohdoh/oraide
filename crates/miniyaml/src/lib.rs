@@ -14,6 +14,13 @@
 //! [lex]: https://en.wikipedia.org/wiki/Lexical_analysis
 //! [MiniYaml]: https://www.openra.net/book/glossary.html#miniyaml
 
+use {
+    std::{
+        fmt,
+    },
+};
+
+
 // ----- public interface ------------------------------------------------------
 
 /// A spanned-line, comprised of `raw` (spanning the *entire* line, including
@@ -49,7 +56,6 @@ pub struct LexedLine {
 
 /// low-inclusive, high-exclusive span of absolute byte indices
 #[derive(Copy, Clone, PartialEq)]
-#[cfg_attr(test, derive(Debug))]
 pub struct AbsByteIdxSpan {
     start: AbsByteIdx,
     end: AbsByteIdx,
@@ -70,6 +76,12 @@ pub fn lex_miniyaml_document(
 }
 
 // ----- external trait impls --------------------------------------------------
+
+impl fmt::Debug for AbsByteIdxSpan {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "@[{}..{})", self.start.0, self.end.0)
+    }
+}
 
 impl std::ops::Index<AbsByteIdxSpan> for String {
     type Output = str;
