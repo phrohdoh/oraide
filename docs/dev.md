@@ -51,5 +51,12 @@ printf 'hello: world\n' > fifo-check-me
 Use `rm` to delete the named pipe once you no longer want it.
 Of course, you can recreate it whenever you need.
 
+### bonus: send existing files through the pipe
+
+<small>in the 1st terminal:</small>
+```shell
+cat path/to/existing/file.yaml > fifo-check-me
+```
+
 [named pipe]: https://en.wikipedia.org/wiki/Named_pipe
 [linted]: https://en.wikipedia.org/wiki/Lint_(software)
