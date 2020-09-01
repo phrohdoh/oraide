@@ -144,7 +144,7 @@ struct RawAndTerm {
 }
 
 impl RawAndTerm {
-    fn logical_line_end_bx(&self) -> AbsByteIdx {
+    fn logical_line_end_abx(&self) -> AbsByteIdx {
         self.term.map(|term| term.start)
             .unwrap_or(self.raw.end)
     }
@@ -275,7 +275,7 @@ impl<'lxr_src> Lexer<'lxr_src> {
         }
 
         let line_start_abx = raw.start;
-        let logical_line_end_abx = raw_and_term.logical_line_end_bx();
+        let logical_line_end_abx = raw_and_term.logical_line_end_abx();
 
         let is_indent_only = line_txt.trim().is_empty();
         if is_indent_only {
