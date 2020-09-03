@@ -20,3 +20,4 @@ path = "src/bin/main.rs"
 oraide-miniyaml = { path = "../miniyaml" }
 pico-args = "0.3"
 anyhow = "1.0"
+ansi_term = "0.12"

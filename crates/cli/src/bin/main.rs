@@ -46,7 +46,6 @@ fn _check_single_file(
     };
 
     for line in lines {
-        let raw_txt = &file_contents[line.raw];
         let opt_indent_txt = map_opt_span_to_txt(line.indent);
         let opt_key_txt = map_opt_span_to_txt(line.key);
         let opt_key_sep_txt = map_opt_span_to_txt(line.key_sep);
@@ -54,13 +53,87 @@ fn _check_single_file(
         let opt_comment_txt = map_opt_span_to_txt(line.comment);
         let opt_term_txt = map_opt_span_to_txt(line.term);
 
-        println!("raw     = {:?}", raw_txt);
-        println!("indent  = {:?}", opt_indent_txt);
-        println!("key     = {:?}", opt_key_txt);
-        println!("key_sep = {:?}", opt_key_sep_txt);
-        println!("value   = {:?}", opt_value_txt);
-        println!("comment = {:?}", opt_comment_txt);
-        println!("term    = {:?}", opt_term_txt);
+        if let Some(indent_txt) = opt_indent_txt {
+            let txt = indent_txt
+                .replace(" ", "␣")
+                .replace("\t", "\\t");
+
+            let fg = ansi_term::Color::Black;
+            let bg = ansi_term::Color::Blue;
+
+            let styled = ansi_term::Style::new()
+                .fg(fg)
+                .on(bg)
+                .paint(txt);
+
+            print!("{}", styled);
+        }
+
+        if let Some(key_txt) = opt_key_txt {
+            let fg = ansi_term::Color::Black;
+            let bg = ansi_term::Color::Green;
+
+            let styled = ansi_term::Style::new()
+                .fg(fg)
+                .on(bg)
+                .paint(key_txt);
+
+            print!("{}", styled);
+        }
+
+        if let Some(key_sep_txt) = opt_key_sep_txt {
+            let fg = ansi_term::Color::Black;
+            let bg = ansi_term::Color::Red;
+
+            let styled = ansi_term::Style::new()
+                .fg(fg)
+                .on(bg)
+                .paint(key_sep_txt);
+
+            print!("{}", styled);
+        }
+
+        if let Some(value_txt) = opt_value_txt {
+            let fg = ansi_term::Color::Black;
+            let bg = ansi_term::Color::Purple;
+
+            let styled = ansi_term::Style::new()
+                .fg(fg)
+                .on(bg)
+                .paint(value_txt);
+
+            print!("{}", styled);
+        }
+
+        if let Some(comment_txt) = opt_comment_txt {
+            let fg = ansi_term::Color::Black;
+            let bg = ansi_term::Color::RGB(128, 128, 128);
+
+            let styled = ansi_term::Style::new()
+                .fg(fg)
+                .on(bg)
+                .paint(comment_txt);
+
+            print!("{}", styled);
+        }
+
+        if let Some(term_txt) = opt_term_txt {
+            let txt = term_txt
+                .replace("\r\n", "␍␊")
+                .replace("\n", "␊")
+                .replace("\r", "␍") ;
+
+            let fg = ansi_term::Color::Black;
+            let bg = ansi_term::Color::White;
+
+            let styled = ansi_term::Style::new()
+                .fg(fg)
+                .on(bg)
+                .paint(txt);
+
+            print!("{}", styled);
+        }
+
         println!();
     }
 
