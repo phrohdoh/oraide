@@ -14,7 +14,7 @@
 //! [static analysis]: https://en.wikipedia.org/wiki/Static_program_analysis
 
 mod spanner;
-mod tree_maker;
+// mod tree_maker;
 
 use {
     std::{
@@ -30,10 +30,12 @@ pub use {
         Spanner,
         SpannedLine,
     },
+    /*
     tree_maker::{
         make_tree,
         Tree,
     },
+    */
 };
 
 /// low-inclusive, high-exclusive span of absolute byte indices
