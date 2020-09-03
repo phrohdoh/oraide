@@ -14,6 +14,7 @@
 //! [static analysis]: https://en.wikipedia.org/wiki/Static_program_analysis
 
 mod spanner;
+mod tree_maker;
 
 use {
     std::{
@@ -28,6 +29,10 @@ pub use {
         span_lines_of,
         Spanner,
         SpannedLine,
+    },
+    tree_maker::{
+        make_tree,
+        Tree,
     },
 };
 

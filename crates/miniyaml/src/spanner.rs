@@ -38,8 +38,10 @@ pub trait Spanner {
     fn span_lines(&mut self) -> SpannedLines;
 }
 
-/// A componentized line of text, comprised of [`raw`] which spans the entire
-/// line (including leading and trailing whitespace, i.e., line-terminator).
+/// A componentized line of text.
+///
+/// [`raw`] spans the entire line (including leading and trailing whitespace,
+/// i.e., line-terminator).
 ///
 /// [`raw`]: struct.SpannedLine.html#structfield.raw
 #[derive(PartialEq)]
