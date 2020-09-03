@@ -56,83 +56,108 @@ fn _check_single_file(
         if let Some(indent_txt) = opt_indent_txt {
             let txt = indent_txt
                 .replace(" ", "␣")
-                .replace("\t", "\\t");
+                .replace("\t", "→") // ␉
+                ;
 
-            let fg = ansi_term::Color::Black;
-            let bg = ansi_term::Color::Blue;
+            let fg = ansi_term::Color::Blue;
 
             let styled = ansi_term::Style::new()
                 .fg(fg)
-                .on(bg)
                 .paint(txt);
 
             print!("{}", styled);
         }
 
         if let Some(key_txt) = opt_key_txt {
-            let fg = ansi_term::Color::Black;
-            let bg = ansi_term::Color::Green;
+            let fg = ansi_term::Color::Green;
 
-            let styled = ansi_term::Style::new()
-                .fg(fg)
-                .on(bg)
-                .paint(key_txt);
+            let styleds = {
+                let mut ret = vec![];
 
-            print!("{}", styled);
+                match (key_txt.starts_with('-'), key_txt.rfind('@')) {
+                    (true, Some(last_at_idx)) => {
+                        let rm_styled = ansi_term::Style::new().fg(ansi_term::Color::Red).paint("-");
+                        let rest_styled = ansi_term::Style::new().fg(fg).paint(&key_txt[1..last_at_idx]);
+                        let suffix_styled = ansi_term::Style::new().fg(ansi_term::Color::Yellow).paint(&key_txt[last_at_idx..]);
+
+                        ret.push(rm_styled);
+                        ret.push(rest_styled);
+                        ret.push(suffix_styled);
+                    },
+                    (true, None) => {
+                        let rm_styled = ansi_term::Style::new().fg(ansi_term::Color::Red).paint("-");
+                        let rest_styled = ansi_term::Style::new().fg(fg).paint(&key_txt[1..]);
+
+                        ret.push(rm_styled);
+                        ret.push(rest_styled);
+                    },
+                    (false, Some(last_at_idx)) => {
+                        let suffix_styled = ansi_term::Style::new().fg(ansi_term::Color::Yellow).paint(&key_txt[last_at_idx..]);
+                        let rest_styled = ansi_term::Style::new().fg(fg).paint(&key_txt[..last_at_idx]);
+
+                        ret.push(rest_styled);
+                        ret.push(suffix_styled);
+                    },
+                    (false, None) => {
+                        let styled = ansi_term::Style::new().fg(fg).paint(key_txt);
+                        ret.push(styled);
+                    },
+                }
+
+                ret
+            };
+
+            for styled in styleds {
+                print!("{}", styled);
+            }
         }
 
         if let Some(key_sep_txt) = opt_key_sep_txt {
-            let fg = ansi_term::Color::Black;
-            let bg = ansi_term::Color::Red;
+            let fg = ansi_term::Color::RGB(128, 128, 128);
 
             let styled = ansi_term::Style::new()
                 .fg(fg)
-                .on(bg)
                 .paint(key_sep_txt);
 
             print!("{}", styled);
         }
 
         if let Some(value_txt) = opt_value_txt {
-            let fg = ansi_term::Color::Black;
-            let bg = ansi_term::Color::Purple;
+            let fg = ansi_term::Color::RGB(192, 192, 224);
 
             let styled = ansi_term::Style::new()
                 .fg(fg)
-                .on(bg)
                 .paint(value_txt);
 
             print!("{}", styled);
         }
 
         if let Some(comment_txt) = opt_comment_txt {
-            let fg = ansi_term::Color::Black;
-            let bg = ansi_term::Color::RGB(128, 128, 128);
+            let fg = ansi_term::Color::RGB(96, 96, 96);
 
             let styled = ansi_term::Style::new()
                 .fg(fg)
-                .on(bg)
                 .paint(comment_txt);
 
             print!("{}", styled);
         }
 
+        // /*
         if let Some(term_txt) = opt_term_txt {
             let txt = term_txt
                 .replace("\r\n", "␍␊")
                 .replace("\n", "␊")
                 .replace("\r", "␍") ;
 
-            let fg = ansi_term::Color::Black;
-            let bg = ansi_term::Color::White;
+            let fg = ansi_term::Color::Red;
 
             let styled = ansi_term::Style::new()
                 .fg(fg)
-                .on(bg)
                 .paint(txt);
 
             print!("{}", styled);
         }
+        // */
 
         println!();
     }
