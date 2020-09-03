@@ -5,3 +5,6 @@ name = "oraide-miniyaml"
 version = "0.0.0"
 authors = ["Taryn Hill <taryn+oraide@phrohdoh.com>"]
 edition = "2018"
+
+[dependencies]
+indextree = "4.2.0"
