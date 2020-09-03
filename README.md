@@ -9,6 +9,8 @@ The *oraide* moniker is simply a shortened form of "OpenRA [IDE]."
 A suite of *tools* to aid in the development of [OpenRA]-based games.
 
 > OpenRA is a general-purpose [RTS] [game engine] with *strong modding support*.
+>
+> (copied from https://www.openra.net/about/)
 
 The goal of this project is not to produce [libraries] for developers, although
 that will happen, but to create tools (such as command-line applications,
