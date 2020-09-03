@@ -14,8 +14,8 @@ use {
     },
     oraide_cli::Result,
     oraide_miniyaml::{
-        lex_miniyaml_document,
-        AbsByteIdxSpan
+        span_lines_of,
+        AbsByteIdxSpan,
     },
 };
 
@@ -39,7 +39,7 @@ fn _check_single_file(
     path: &Path,
 ) -> Result<()> {
     let file_contents = fs::read_to_string(path)?;
-    let lines = lex_miniyaml_document(&file_contents);
+    let lines = span_lines_of(&file_contents);
 
     let map_opt_span_to_txt = |opt_span: Option<AbsByteIdxSpan>| -> Option<&str> {
         opt_span.map(|span| &file_contents[span])
