@@ -16,9 +16,9 @@ editor extensions, etc.) that reduce friction in game development.
 
 ## actual project status
 
-Exposes functionality to [lex] [MiniYaml], a textual file format custom to
-OpenRA, into componentized, spanned lines which can be used to implement basic
-[linting], but not much else currently.
+Exposes functionality to componentize [MiniYaml], a textual file format custom
+to OpenRA, into spanned lines which can be used to implement basic [linting],
+but not much else currently.
 
 See the [running the command-line application] section of this file for
 more information.
@@ -151,7 +151,6 @@ Read [LICENSE-AGPLv3] for details.
 [Cargo]: https://doc.rust-lang.org/cargo/
 [game engine]: https://en.wikipedia.org/wiki/Game_engine
 [IDE]: https://en.wikipedia.org/wiki/Integrated_development_environment
-[lex]: https://en.wikipedia.org/wiki/Lexical_analysis
 [libraries]: https://en.wikipedia.org/wiki/Library_(computing)
 [LICENSE-AGPLv3]: ./LICENSE-AGPLv3
 [linting]: https://en.wikipedia.org/wiki/Lint_%28software%29
