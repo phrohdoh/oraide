@@ -469,6 +469,39 @@ impl Spanner for DefaultSpanner<'_> {
 mod tests {
     use super::*;
 
+    #[test]
+    fn default_spanner_lines_roundtrips() {
+        // - expectation
+        let expected_lines = [
+            "\n",
+            " \n",
+            "hello: world\n",
+            "\n",
+            " foo\n",
+            "  bar\n",
+        ];
+
+        // - given
+        let input = expected_lines.join("");
+        let default_spanner = DefaultSpanner::new(&input);
+
+        // - when
+        let actual_lines = default_spanner.lines()
+        // convert each span to the text contents of the span, since that is
+        // what we want to compare (instead of the types of `expected_lines`
+        // and `actual_lines`)
+            .into_iter()
+            .map(|it| &input[it.raw])
+            .collect::<Vec<_>>();
+
+        // - then
+        assert_eq!(expected_lines.len(), actual_lines.len());
+
+        expected_lines.iter().zip(actual_lines)
+        // compare per-line text contents
+            .for_each(|(&expected, actual)| assert_eq!(expected, actual));
+    }
+
     macro_rules! assert_eq_span {
         (
             expected: $expected:expr,
