@@ -1,25 +1,35 @@
 {
-    ",aaa:eq": {
-        "prefix": ",aaa:eq",
+    "test:given-when-then:eq": {
+        "prefix": [
+            ",aaa",
+            ",gwt",
+            ",t",
+            "#test",
+            "test",
+        ],
         "scope": "rust",
         "body": [
             "$0#[test]",
             "fn ${999:_unnamed_test_$CURRENT_SECONDS_UNIX}() {",
-            "    // arrange",
+            "    // expectation",
             "    let expected${110:_things} = ${140:vec![",
             "        ${150:todo!()},",
             "    ]};",
+            "",
+            "    // given",
             "    let input = ${310:vec![",
             "        ${320:todo!()},",
             "    ]};",
-            "    // act",
+            "",
+            "    // when",
             "    let actual${110:_things} = ${120:todo!}(${130:input});",
-            "    // assert",
+            "",
+            "    // then",
             "    ${160:assert_eq!(",
             "        expected${110:_things},",
             "        actual${110:_things},",
             "    )};",
             "} // ${999:_unnamed_test_$CURRENT_SECONDS_UNIX}",
         ],
-    }
+    },
 }
